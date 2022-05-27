@@ -59,12 +59,15 @@ FuzzyGammaNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
   # Estimating Gamma Parameters
   parametersC <- lapply(1:length(unique(M)), function(i) {
     lapply(1:cols, function(j) {
-      # print(c(i,j))
+      #print(c(i,j))
       SubSet <- dados[M == unique(M)[i], j]
-      param <- MASS::fitdistr(SubSet, "gamma", lower = 0.001, upper = max(SubSet) + 1e-2)$estimate
+      # --
+      param <- stats::optim(c(.5,.5), log_ver_Gamma, method = "L-BFGS-B", y = SubSet, lower = 0.1, upper = max(SubSet))$par
+      # --
       return(param)
     })
   })
+
   # --------------------------------------------------------
   Sturges <- Sturges(dados, M);
   Comprim_Intervalo <- Comprim_Intervalo(dados, M, Sturges);
@@ -193,7 +196,7 @@ predict.FuzzyGammaNaiveBayes <- function(object,
     # -------------------------
     Infpos <- which(R_M_obs==Inf)
     R_M_obs[Infpos] <- .Machine$integer.max;
-    R_M_obs <- matrix(unlist(R_M_obs),ncol = cols)
+    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)))
     R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
     # ----------
     colnames(R_M_obs) <- unique(M)

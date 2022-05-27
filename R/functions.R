@@ -161,3 +161,16 @@ pertinencia_predict <- function(M, Sturges, minimos, Comprim_Intervalo, Pertinen
   return(ACHOU_t)
 
 }
+
+#' @noRd
+log_ver_Gamma <- function(theta,y){
+
+  # Gamma Likelihood Function
+
+  beta = theta[2]
+  alpha = theta[1]
+
+  saida <- - sum(log(dgamma(y,shape = alpha, rate = beta)),na.rm=T)
+
+  return(saida)
+}
