@@ -1,3 +1,5 @@
+#' Fuzzy Gamma Naive Bayes
+#'
 #' \code{FuzzyGammaNaiveBayes} Fuzzy Gamma Naive Bayes
 #'
 #'

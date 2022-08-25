@@ -1,5 +1,5 @@
 
-# FuzzyClass <img src="man/figures/logo.png" align="right" height="139"/>
+# FuzzyClass <img src="man/figures/logo.png" style="float: right" height="139"/>
 
 <!-- badges: start -->
 
@@ -9,7 +9,7 @@ version](https://www.r-pkg.org/badges/version/FuzzyClass)](https://cran.r-projec
 Download](https://cranlogs.r-pkg.org/badges/grand-total/FuzzyClass)](https://cran.r-project.org/package=FuzzyClass)
 <!-- badges: end -->
 
-Last update: 19-05-2022
+Last update: 24-08-2022
 
 ## A family of probabilities-based classifiers Fuzzy and Non-Fuzzy
 
@@ -31,10 +31,13 @@ library(FuzzyClass)
 ### Data reading and preparation for use
 
 ``` r
+
 library(FuzzyClass)
 library(caret)
-#> Carregando pacotes exigidos: lattice
 #> Carregando pacotes exigidos: ggplot2
+#> Carregando pacotes exigidos: lattice
+#> Warning in system("timedatectl", intern = TRUE): execução do comando
+#> 'timedatectl' teve status 1
 
 #' ---------------------------------------------
 #' The following shows how the functions are used:
@@ -80,32 +83,32 @@ confusionMatrix(factor(Test[,4]), saida)
 #> 
 #>           Reference
 #> Prediction  1  2  3
-#>          1 42 10  0
-#>          2  9 42  9
-#>          3  3 10 55
+#>          1 53  4  0
+#>          2  7 48 10
+#>          3  1 12 45
 #> 
 #> Overall Statistics
 #>                                           
-#>                Accuracy : 0.7722          
-#>                  95% CI : (0.7039, 0.8313)
+#>                Accuracy : 0.8111          
+#>                  95% CI : (0.7462, 0.8655)
 #>     No Information Rate : 0.3556          
 #>     P-Value [Acc > NIR] : <2e-16          
 #>                                           
-#>                   Kappa : 0.6571          
+#>                   Kappa : 0.7163          
 #>                                           
-#>  Mcnemar's Test P-Value : 0.3757          
+#>  Mcnemar's Test P-Value : 0.5724          
 #> 
 #> Statistics by Class:
 #> 
 #>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity            0.7778   0.6774   0.8594
-#> Specificity            0.9206   0.8475   0.8879
-#> Pos Pred Value         0.8077   0.7000   0.8088
-#> Neg Pred Value         0.9062   0.8333   0.9196
-#> Prevalence             0.3000   0.3444   0.3556
-#> Detection Rate         0.2333   0.2333   0.3056
-#> Detection Prevalence   0.2889   0.3333   0.3778
-#> Balanced Accuracy      0.8492   0.7624   0.8737
+#> Sensitivity            0.8689   0.7500   0.8182
+#> Specificity            0.9664   0.8534   0.8960
+#> Pos Pred Value         0.9298   0.7385   0.7759
+#> Neg Pred Value         0.9350   0.8609   0.9180
+#> Prevalence             0.3389   0.3556   0.3056
+#> Detection Rate         0.2944   0.2667   0.2500
+#> Detection Prevalence   0.3167   0.3611   0.3222
+#> Balanced Accuracy      0.9176   0.8017   0.8571
 
 saida <- predict(fit_FGNB, test, type = "matrix")
 ```
@@ -133,32 +136,32 @@ confusionMatrix(factor(Test[,4]), saida)
 #> 
 #>           Reference
 #> Prediction  1  2  3
-#>          1 49  2  1
-#>          2  3 52  5
-#>          3  0 14 54
+#>          1 55  1  1
+#>          2  4 57  4
+#>          3  0 12 46
 #> 
 #> Overall Statistics
 #>                                           
-#>                Accuracy : 0.8611          
-#>                  95% CI : (0.8018, 0.9081)
-#>     No Information Rate : 0.3778          
-#>     P-Value [Acc > NIR] : <2e-16          
+#>                Accuracy : 0.8778          
+#>                  95% CI : (0.8208, 0.9218)
+#>     No Information Rate : 0.3889          
+#>     P-Value [Acc > NIR] : < 2e-16         
 #>                                           
-#>                   Kappa : 0.791           
+#>                   Kappa : 0.8161          
 #>                                           
-#>  Mcnemar's Test P-Value : 0.1409          
+#>  Mcnemar's Test P-Value : 0.07855         
 #> 
 #> Statistics by Class:
 #> 
 #>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity            0.9423   0.7647   0.9000
-#> Specificity            0.9766   0.9286   0.8833
-#> Pos Pred Value         0.9423   0.8667   0.7941
-#> Neg Pred Value         0.9766   0.8667   0.9464
-#> Prevalence             0.2889   0.3778   0.3333
-#> Detection Rate         0.2722   0.2889   0.3000
-#> Detection Prevalence   0.2889   0.3333   0.3778
-#> Balanced Accuracy      0.9594   0.8466   0.8917
+#> Sensitivity            0.9322   0.8143   0.9020
+#> Specificity            0.9835   0.9273   0.9070
+#> Pos Pred Value         0.9649   0.8769   0.7931
+#> Neg Pred Value         0.9675   0.8870   0.9590
+#> Prevalence             0.3278   0.3889   0.2833
+#> Detection Rate         0.3056   0.3167   0.2556
+#> Detection Prevalence   0.3167   0.3611   0.3222
+#> Balanced Accuracy      0.9578   0.8708   0.9045
 
 # -----
 fit_GNB <- FuzzyGaussianNaiveBayes(train =  Train[,-4],
@@ -179,32 +182,32 @@ confusionMatrix(factor(Test[,4]), saida)
 #> 
 #>           Reference
 #> Prediction  1  2  3
-#>          1 49  3  0
-#>          2  3 52  5
-#>          3  0 14 54
+#>          1 56  1  0
+#>          2  4 57  4
+#>          3  0 11 47
 #> 
 #> Overall Statistics
 #>                                           
-#>                Accuracy : 0.8611          
-#>                  95% CI : (0.8018, 0.9081)
+#>                Accuracy : 0.8889          
+#>                  95% CI : (0.8336, 0.9308)
 #>     No Information Rate : 0.3833          
 #>     P-Value [Acc > NIR] : < 2.2e-16       
 #>                                           
-#>                   Kappa : 0.7911          
+#>                   Kappa : 0.8328          
 #>                                           
 #>  Mcnemar's Test P-Value : NA              
 #> 
 #> Statistics by Class:
 #> 
 #>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity            0.9423   0.7536   0.9153
-#> Specificity            0.9766   0.9279   0.8843
-#> Pos Pred Value         0.9423   0.8667   0.7941
-#> Neg Pred Value         0.9766   0.8583   0.9554
-#> Prevalence             0.2889   0.3833   0.3278
-#> Detection Rate         0.2722   0.2889   0.3000
-#> Detection Prevalence   0.2889   0.3333   0.3778
-#> Balanced Accuracy      0.9594   0.8408   0.8998
+#> Sensitivity            0.9333   0.8261   0.9216
+#> Specificity            0.9917   0.9279   0.9147
+#> Pos Pred Value         0.9825   0.8769   0.8103
+#> Neg Pred Value         0.9675   0.8957   0.9672
+#> Prevalence             0.3333   0.3833   0.2833
+#> Detection Rate         0.3111   0.3167   0.2611
+#> Detection Prevalence   0.3167   0.3611   0.3222
+#> Balanced Accuracy      0.9625   0.8770   0.9181
 
 saida <- predict(fit_GNB, test, type = "matrix")
 ```
@@ -230,32 +233,32 @@ confusionMatrix(factor(Test[,4]), saida)
 #> 
 #>           Reference
 #> Prediction  1  2  3
-#>          1 35 17  0
-#>          2  1 56  3
-#>          3  0 16 52
+#>          1 53  4  0
+#>          2  3 62  0
+#>          3  0 17 41
 #> 
 #> Overall Statistics
-#>                                          
-#>                Accuracy : 0.7944         
-#>                  95% CI : (0.728, 0.8509)
-#>     No Information Rate : 0.4944         
-#>     P-Value [Acc > NIR] : < 2.2e-16      
-#>                                          
-#>                   Kappa : 0.6895         
-#>                                          
-#>  Mcnemar's Test P-Value : NA             
+#>                                           
+#>                Accuracy : 0.8667          
+#>                  95% CI : (0.8081, 0.9127)
+#>     No Information Rate : 0.4611          
+#>     P-Value [Acc > NIR] : < 2.2e-16       
+#>                                           
+#>                   Kappa : 0.7985          
+#>                                           
+#>  Mcnemar's Test P-Value : NA              
 #> 
 #> Statistics by Class:
 #> 
 #>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity            0.9722   0.6292   0.9455
-#> Specificity            0.8819   0.9560   0.8720
-#> Pos Pred Value         0.6731   0.9333   0.7647
-#> Neg Pred Value         0.9922   0.7250   0.9732
-#> Prevalence             0.2000   0.4944   0.3056
-#> Detection Rate         0.1944   0.3111   0.2889
-#> Detection Prevalence   0.2889   0.3333   0.3778
-#> Balanced Accuracy      0.9271   0.7926   0.9087
+#> Sensitivity            0.9464   0.7470   1.0000
+#> Specificity            0.9677   0.9691   0.8777
+#> Pos Pred Value         0.9298   0.9538   0.7069
+#> Neg Pred Value         0.9756   0.8174   1.0000
+#> Prevalence             0.3111   0.4611   0.2278
+#> Detection Rate         0.2944   0.3444   0.2278
+#> Detection Prevalence   0.3167   0.3611   0.3222
+#> Balanced Accuracy      0.9571   0.8580   0.9388
 
 saida <- predict(fit_FNBT, test, type = "matrix")
 
@@ -277,130 +280,32 @@ confusionMatrix(factor(Test[,4]), saida)
 #> 
 #>           Reference
 #> Prediction  1  2  3
-#>          1 48  4  0
-#>          2  4 53  3
-#>          3  0 16 52
+#>          1 55  2  0
+#>          2  5 58  2
+#>          3  0 12 46
 #> 
 #> Overall Statistics
 #>                                           
-#>                Accuracy : 0.85            
-#>                  95% CI : (0.7893, 0.8988)
-#>     No Information Rate : 0.4056          
+#>                Accuracy : 0.8833          
+#>                  95% CI : (0.8272, 0.9263)
+#>     No Information Rate : 0.4             
 #>     P-Value [Acc > NIR] : < 2.2e-16       
 #>                                           
-#>                   Kappa : 0.7747          
+#>                   Kappa : 0.8243          
 #>                                           
 #>  Mcnemar's Test P-Value : NA              
 #> 
 #> Statistics by Class:
 #> 
 #>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity            0.9231   0.7260   0.9455
-#> Specificity            0.9688   0.9346   0.8720
-#> Pos Pred Value         0.9231   0.8833   0.7647
-#> Neg Pred Value         0.9688   0.8333   0.9732
-#> Prevalence             0.2889   0.4056   0.3056
-#> Detection Rate         0.2667   0.2944   0.2889
-#> Detection Prevalence   0.2889   0.3333   0.3778
-#> Balanced Accuracy      0.9459   0.8303   0.9087
-
-saida <- predict(fit_NBT, test, type = "matrix")
-```
-
-#### Fuzzy Naive Bayes Trapezoidal
-
-
-```r
-
-fit_FNBT <- FuzzyTrapezoidalNaiveBayes(train =  Train[,-4],
-                                    cl = Train[,4], cores = 4,
-                                  fuzzy = T)
-print(fit_FNBT)
-#> 
-#> Fuzzy Naive Bayes Trapezoidal Classifier for Discrete Predictors
-#> 
-#> Class:
-#> [1] "1" "2" "3"
-
-saida <- predict(fit_FNBT, test)
-confusionMatrix(factor(Test[,4]), saida)
-#> Confusion Matrix and Statistics
-#> 
-#>           Reference
-#> Prediction  1  2  3
-#>          1 36 16  0
-#>          2  1 52  7
-#>          3  0 14 54
-#> 
-#> Overall Statistics
-#>                                           
-#>                Accuracy : 0.7889          
-#>                  95% CI : (0.7219, 0.8461)
-#>     No Information Rate : 0.4556          
-#>     P-Value [Acc > NIR] : < 2.2e-16       
-#>                                           
-#>                   Kappa : 0.6805          
-#>                                           
-#>  Mcnemar's Test P-Value : NA              
-#> 
-#> Statistics by Class:
-#> 
-#>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity            0.9730   0.6341   0.8852
-#> Specificity            0.8881   0.9184   0.8824
-#> Pos Pred Value         0.6923   0.8667   0.7941
-#> Neg Pred Value         0.9922   0.7500   0.9375
-#> Prevalence             0.2056   0.4556   0.3389
-#> Detection Rate         0.2000   0.2889   0.3000
-#> Detection Prevalence   0.2889   0.3333   0.3778
-#> Balanced Accuracy      0.9305   0.7763   0.8838
-
-saida <- predict(fit_FNBT, test, type = "matrix")
-
-# ----------------
-
-fit_NBT <- FuzzyTrapezoidalNaiveBayes(train =  Train[,-4],
-                                  cl = Train[,4], cores = 2,
-                                  fuzzy = F)
-print(fit_NBT)
-#> 
-#> Naive Bayes Trapezoidal Classifier for Discrete Predictors
-#> 
-#> Class:
-#> [1] "1" "2" "3"
-
-saida <- predict(fit_NBT, test)
-confusionMatrix(factor(Test[,4]), saida)
-#> Confusion Matrix and Statistics
-#> 
-#>           Reference
-#> Prediction  1  2  3
-#>          1 38 14  0
-#>          2  1 51  8
-#>          3  0 15 53
-#> 
-#> Overall Statistics
-#>                                           
-#>                Accuracy : 0.7889          
-#>                  95% CI : (0.7219, 0.8461)
-#>     No Information Rate : 0.4444          
-#>     P-Value [Acc > NIR] : < 2.2e-16       
-#>                                           
-#>                   Kappa : 0.6807          
-#>                                           
-#>  Mcnemar's Test P-Value : NA              
-#> 
-#> Statistics by Class:
-#> 
-#>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity            0.9744   0.6375   0.8689
-#> Specificity            0.9007   0.9100   0.8739
-#> Pos Pred Value         0.7308   0.8500   0.7794
-#> Neg Pred Value         0.9922   0.7583   0.9286
-#> Prevalence             0.2167   0.4444   0.3389
-#> Detection Rate         0.2111   0.2833   0.2944
-#> Detection Prevalence   0.2889   0.3333   0.3778
-#> Balanced Accuracy      0.9375   0.7737   0.8714
+#> Sensitivity            0.9167   0.8056   0.9583
+#> Specificity            0.9833   0.9352   0.9091
+#> Pos Pred Value         0.9649   0.8923   0.7931
+#> Neg Pred Value         0.9593   0.8783   0.9836
+#> Prevalence             0.3333   0.4000   0.2667
+#> Detection Rate         0.3056   0.3222   0.2556
+#> Detection Prevalence   0.3167   0.3611   0.3222
+#> Balanced Accuracy      0.9500   0.8704   0.9337
 
 saida <- predict(fit_NBT, test, type = "matrix")
 ```
@@ -428,42 +333,42 @@ confusionMatrix(factor(Test[,4]), saida)
 #> 
 #>           Reference
 #> Prediction  1  2  3
-#>          1 44  8  0
-#>          2  1 50  9
-#>          3  0 11 57
+#>          1 54  3  0
+#>          2  3 53  9
+#>          3  0 10 48
 #> 
 #> Overall Statistics
 #>                                           
-#>                Accuracy : 0.8389          
-#>                  95% CI : (0.7769, 0.8894)
-#>     No Information Rate : 0.3833          
+#>                Accuracy : 0.8611          
+#>                  95% CI : (0.8018, 0.9081)
+#>     No Information Rate : 0.3667          
 #>     P-Value [Acc > NIR] : < 2.2e-16       
 #>                                           
-#>                   Kappa : 0.7564          
+#>                   Kappa : 0.7912          
 #>                                           
 #>  Mcnemar's Test P-Value : NA              
 #> 
 #> Statistics by Class:
 #> 
 #>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity            0.9778   0.7246   0.8636
-#> Specificity            0.9407   0.9099   0.9035
-#> Pos Pred Value         0.8462   0.8333   0.8382
-#> Neg Pred Value         0.9922   0.8417   0.9196
-#> Prevalence             0.2500   0.3833   0.3667
-#> Detection Rate         0.2444   0.2778   0.3167
-#> Detection Prevalence   0.2889   0.3333   0.3778
-#> Balanced Accuracy      0.9593   0.8173   0.8836
+#> Sensitivity            0.9474   0.8030   0.8421
+#> Specificity            0.9756   0.8947   0.9187
+#> Pos Pred Value         0.9474   0.8154   0.8276
+#> Neg Pred Value         0.9756   0.8870   0.9262
+#> Prevalence             0.3167   0.3667   0.3167
+#> Detection Rate         0.3000   0.2944   0.2667
+#> Detection Prevalence   0.3167   0.3611   0.3222
+#> Balanced Accuracy      0.9615   0.8489   0.8804
 
 saida <- predict(fit_FENB, test, type = "matrix")
 head(saida)
 #>              1         2         3
-#> [1,] 0.2894594 0.3391237 0.3714169
-#> [2,] 0.3169201 0.3343985 0.3486814
-#> [3,] 0.3144604 0.3299162 0.3556233
-#> [4,] 0.3349515 0.3214146 0.3436339
-#> [5,] 0.2858112 0.3397929 0.3743959
-#> [6,] 0.3138168 0.3305043 0.3556789
+#> [1,] 0.3207259 0.3299960 0.3492781
+#> [2,] 0.3157642 0.3350339 0.3492019
+#> [3,] 0.2942864 0.3371848 0.3685288
+#> [4,] 0.3155302 0.3300264 0.3544433
+#> [5,] 0.2971174 0.3357104 0.3671723
+#> [6,] 0.2871457 0.3392441 0.3736102
 ```
 
 #### Fuzzy Gamma Naive Bayes Classifier
@@ -488,42 +393,42 @@ confusionMatrix(factor(Test[,4]), saida)
 #> 
 #>           Reference
 #> Prediction  1  2  3
-#>          1 52  0  0
-#>          2 18 42  0
-#>          3  0 68  0
+#>          1 57  0  0
+#>          2 39 26  0
+#>          3  1 57  0
 #> 
 #> Overall Statistics
 #>                                           
-#>                Accuracy : 0.5222          
-#>                  95% CI : (0.4466, 0.5971)
-#>     No Information Rate : 0.6111          
-#>     P-Value [Acc > NIR] : 0.9938          
+#>                Accuracy : 0.4611          
+#>                  95% CI : (0.3867, 0.5368)
+#>     No Information Rate : 0.5389          
+#>     P-Value [Acc > NIR] : 0.9848          
 #>                                           
-#>                   Kappa : 0.3014          
+#>                   Kappa : 0.187           
 #>                                           
-#>  Mcnemar's Test P-Value : NA              
+#>  Mcnemar's Test P-Value : <2e-16          
 #> 
 #> Statistics by Class:
 #> 
 #>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity            0.7429   0.3818       NA
-#> Specificity            1.0000   0.7429   0.6222
-#> Pos Pred Value         1.0000   0.7000       NA
-#> Neg Pred Value         0.8594   0.4333       NA
-#> Prevalence             0.3889   0.6111   0.0000
-#> Detection Rate         0.2889   0.2333   0.0000
-#> Detection Prevalence   0.2889   0.3333   0.3778
-#> Balanced Accuracy      0.8714   0.5623       NA
+#> Sensitivity            0.5876   0.3133       NA
+#> Specificity            1.0000   0.5979   0.6778
+#> Pos Pred Value         1.0000   0.4000       NA
+#> Neg Pred Value         0.6748   0.5043       NA
+#> Prevalence             0.5389   0.4611   0.0000
+#> Detection Rate         0.3167   0.1444   0.0000
+#> Detection Prevalence   0.3167   0.3611   0.3222
+#> Balanced Accuracy      0.7938   0.4556       NA
 
 saida <- predict(fit_NBT, test, type = "matrix")
 head(saida)
 #>              1            2            3
-#> [1,] 0.9999999 7.189903e-08 3.099129e-22
-#> [2,] 0.9956464 4.353580e-03 4.046958e-13
-#> [3,] 0.9992847 7.153056e-04 2.848775e-13
-#> [4,] 0.9945190 5.480950e-03 5.116515e-10
-#> [5,] 0.9999994 5.601865e-07 2.960668e-19
-#> [6,] 0.9975604 2.439645e-03 9.723872e-14
+#> [1,] 0.9995993 4.006780e-04 6.390272e-15
+#> [2,] 0.9998230 1.769991e-04 7.199872e-16
+#> [3,] 0.9999992 7.907169e-07 4.046193e-19
+#> [4,] 0.9998423 1.577194e-04 1.832986e-15
+#> [5,] 0.9999999 1.054485e-07 9.065652e-19
+#> [6,] 1.0000000 2.649369e-08 1.143123e-20
 ```
 
 #### Fuzzy Exponential Naive Bayes Classifier
@@ -548,41 +453,41 @@ confusionMatrix(factor(Test[,4]), saida)
 #> 
 #>           Reference
 #> Prediction  1  2  3
-#>          1  0 50  2
-#>          2  0 48 12
-#>          3  0 54 14
+#>          1 13 44  0
+#>          2  0 54 11
+#>          3  0 53  5
 #> 
 #> Overall Statistics
 #>                                           
-#>                Accuracy : 0.3444          
-#>                  95% CI : (0.2753, 0.4188)
-#>     No Information Rate : 0.8444          
+#>                Accuracy : 0.4             
+#>                  95% CI : (0.3278, 0.4755)
+#>     No Information Rate : 0.8389          
 #>     P-Value [Acc > NIR] : 1               
 #>                                           
-#>                   Kappa : 0.0064          
+#>                   Kappa : 0.0706          
 #>                                           
-#>  Mcnemar's Test P-Value : <2e-16          
+#>  Mcnemar's Test P-Value : NA              
 #> 
 #> Statistics by Class:
 #> 
 #>                      Class: 1 Class: 2 Class: 3
-#> Sensitivity                NA   0.3158  0.50000
-#> Specificity            0.7111   0.5714  0.64474
-#> Pos Pred Value             NA   0.8000  0.20588
-#> Neg Pred Value             NA   0.1333  0.87500
-#> Prevalence             0.0000   0.8444  0.15556
-#> Detection Rate         0.0000   0.2667  0.07778
-#> Detection Prevalence   0.2889   0.3333  0.37778
-#> Balanced Accuracy          NA   0.4436  0.57237
+#> Sensitivity           1.00000   0.3576  0.31250
+#> Specificity           0.73653   0.6207  0.67683
+#> Pos Pred Value        0.22807   0.8308  0.08621
+#> Neg Pred Value        1.00000   0.1565  0.90984
+#> Prevalence            0.07222   0.8389  0.08889
+#> Detection Rate        0.07222   0.3000  0.02778
+#> Detection Prevalence  0.31667   0.3611  0.32222
+#> Balanced Accuracy     0.86826   0.4892  0.49466
 
 saida <- predict(fit_NBT, test, type = "matrix")
 head(saida)
 #>              1            2            3
-#> [1,] 0.9999999 7.189903e-08 3.099129e-22
-#> [2,] 0.9956464 4.353580e-03 4.046958e-13
-#> [3,] 0.9992847 7.153056e-04 2.848775e-13
-#> [4,] 0.9945190 5.480950e-03 5.116515e-10
-#> [5,] 0.9999994 5.601865e-07 2.960668e-19
-#> [6,] 0.9975604 2.439645e-03 9.723872e-14
+#> [1,] 0.9995993 4.006780e-04 6.390272e-15
+#> [2,] 0.9998230 1.769991e-04 7.199872e-16
+#> [3,] 0.9999992 7.907169e-07 4.046193e-19
+#> [4,] 0.9998423 1.577194e-04 1.832986e-15
+#> [5,] 0.9999999 1.054485e-07 9.065652e-19
+#> [6,] 1.0000000 2.649369e-08 1.143123e-20
 ```
 -->

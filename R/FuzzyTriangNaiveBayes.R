@@ -1,4 +1,6 @@
-#' \code{FuzzyTriangularNaiveBayes} Naive Bayes Trianglar Classifier
+#' Fuzzy Naive Bayes Triangular Classifier
+#'
+#' \code{FuzzyTriangularNaiveBayes} Fuzzy Naive Bayes Triangular Classifier
 #'
 #'
 #' @param train matrix or data frame of training set cases.
@@ -33,6 +35,10 @@
 #'
 #' head(pred_NBT)
 #' head(Test[, 5])
+#'
+#' @importFrom caTools sample.split
+#'
+#'
 #' @export
 FuzzyTriangularNaiveBayes <- function(train, cl, cores = 2, fuzzy = TRUE) {
   UseMethod("FuzzyTriangularNaiveBayes")

@@ -1,16 +1,3 @@
-# --------------------------------------------------
-#             Fuzzy Gaussian Naive Bayes
-#                       Zadeh
-#
-# data: 18.09.2021
-# version: 0.1
-# author: Arthur..., Ronei Moraes
-# adaptado por: Jodavid Ferreira;
-# e-mails: ...,jodavid@protonmail.com; ronei@de.ufpb.br
-#
-# --------------------------------------------------
-
-
 #' @importFrom stats median.default var
 getMembershipsTrapezoidal <- function(sample, breaks) {
   # -------------------------

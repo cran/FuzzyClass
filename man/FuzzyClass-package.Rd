@@ -6,9 +6,9 @@
 \alias{FuzzyClass-package}
 \title{FuzzyClass: Fuzzy and Non-Fuzzy Classifiers}
 \description{
-\if{html}{\figure{logo.png}{options: align='right' alt='logo' width='120'}}
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Provides classifiers that can be used for discrete variables and for continuous variables based on the idea of Naive Bayes and Fuzzy Naive Bayes considering some statistical distributions of articles published in the literature developed in the LabTEVE and LEAPIG research laboratories. Among the proposed classification methods is a with the Gamma distribution, proposed by Moraes, Soares and Machado (2018) <doi:10.1142/9789813273238_0088>.
+It provides classifiers which can be used for discrete variables and for continuous variables based on the Naive Bayes and Fuzzy Naive Bayes hypothesis. Those methods were developed by researchers belong to the Laboratory of Technologies for Virtual Teaching and Statistics (LabTEVE) and Laboratory of Applied Statistics to Image Processing and 'Geopro' (LEAPIG). They considered some statistical distributions and their papers were published in the scientific literature, as for instance, the Gaussian classifier using fuzzy parameters, proposed by Moraes et al (2021) \doi{10.1007/s40815-020-00936-4}.
 }
 \seealso{
 Useful links:

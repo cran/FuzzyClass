@@ -17,7 +17,7 @@
 #' @examples
 #'
 #' set.seed(1) # determining a seed
-#' data(HouseVotes84, package = "mlbench")
+#' data(HouseVotes84)
 #'
 #' # Splitting into Training and Testing
 #' split <- caTools::sample.split(t(HouseVotes84[, 1]), SplitRatio = 0.7)
@@ -259,7 +259,7 @@ FuzzyNaiveBayes.continuo <- function(train, cl, fuzzy = T, m = NULL, Pi = NULL) 
   #------
   parametersC <- c()
   for(i in 1:length(unique(M))){
-    parametersC[[i]] <- apply(Freq[[i]], 2, \(x) ( (x + m*Pi) / ( sum(x) +m ) ) )
+    parametersC[[i]] <- apply(Freq[[i]], 2, function(x) ( (x + m*Pi) / ( sum(x) +m ) ) )
   }
 
   #------

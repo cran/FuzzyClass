@@ -2,7 +2,7 @@
 % Please edit documentation in R/FuzzyGammaNaiveBayes.R
 \name{FuzzyGammaNaiveBayes}
 \alias{FuzzyGammaNaiveBayes}
-\title{\code{FuzzyGammaNaiveBayes} Fuzzy Gamma Naive Bayes}
+\title{Fuzzy Gamma Naive Bayes}
 \usage{
 FuzzyGammaNaiveBayes(train, cl, cores = 2, fuzzy = TRUE)
 }

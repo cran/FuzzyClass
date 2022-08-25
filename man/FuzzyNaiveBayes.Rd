@@ -26,7 +26,7 @@ A vector of classifications
 \examples{
 
 set.seed(1) # determining a seed
-data(HouseVotes84, package = "mlbench")
+data(HouseVotes84)
 
 # Splitting into Training and Testing
 split <- caTools::sample.split(t(HouseVotes84[, 1]), SplitRatio = 0.7)

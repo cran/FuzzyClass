@@ -2,7 +2,7 @@
 % Please edit documentation in R/FuzzyBetaNaiveBayes.R
 \name{FuzzyBetaNaiveBayes}
 \alias{FuzzyBetaNaiveBayes}
-\title{\code{FuzzyBetaNaiveBayes} Fuzzy Beta Naive Bayes}
+\title{Fuzzy Beta Naive Bayes}
 \usage{
 FuzzyBetaNaiveBayes(train, cl, cores = 2, fuzzy = TRUE)
 }

@@ -1,6 +1,6 @@
-#' Gaussian Naive Bayes Classifier
+#' Fuzzy Gaussian Naive Bayes Classifier Zadeh-based
 #'
-#' \code{FuzzyGaussianNaiveBayes} Gaussian Naive Bayes Classifier Zadeh-based
+#' \code{FuzzyGaussianNaiveBayes} Fuzzy Gaussian Naive Bayes Classifier Zadeh-based
 #'
 #'
 #' @param train matrix or data frame of training set cases.

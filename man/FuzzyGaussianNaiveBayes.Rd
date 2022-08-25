@@ -2,7 +2,7 @@
 % Please edit documentation in R/FuzzyGaussianNaiveBayes.R
 \name{FuzzyGaussianNaiveBayes}
 \alias{FuzzyGaussianNaiveBayes}
-\title{Gaussian Naive Bayes Classifier}
+\title{Fuzzy Gaussian Naive Bayes Classifier Zadeh-based}
 \usage{
 FuzzyGaussianNaiveBayes(train, cl, cores = 2, fuzzy = TRUE)
 }
@@ -19,7 +19,7 @@ FuzzyGaussianNaiveBayes(train, cl, cores = 2, fuzzy = TRUE)
 A vector of classifications
 }
 \description{
-\code{FuzzyGaussianNaiveBayes} Gaussian Naive Bayes Classifier Zadeh-based
+\code{FuzzyGaussianNaiveBayes} Fuzzy Gaussian Naive Bayes Classifier Zadeh-based
 }
 \examples{
 

@@ -1,3 +1,5 @@
+#' Fuzzy Beta Naive Bayes
+#'
 #' \code{FuzzyBetaNaiveBayes} Fuzzy Beta Naive Bayes
 #'
 #'
