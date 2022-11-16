@@ -11,7 +11,7 @@ PoiNBFuzzyParam(train, cl, metd = 1, cores = 2)
 
 \item{cl}{factor of true classifications of training set}
 
-\item{metd}{Method of transforming the triangle into scalar, It is the type of data entry for the test sample, use metd 1 if you want to use the Baricentro technique and use metd 2 if you want to use the Q technique of the uniformity test (article: Directional Statistics and Shape analysis).}
+\item{metd}{Method of transforming the triangle into scalar, It is the type of data entry for the test sample, use metd 1 if you want to use the Yager technique, metd 2 if you want to use the Q technique of the uniformity test (article: Directional Statistics and Shape analysis), and metd 3 if you want to use the Thorani technique}
 
 \item{cores}{how many cores of the computer do you want to use (default = 2)}
 }

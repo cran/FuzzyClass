@@ -54,21 +54,12 @@ FuzzyGammaNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
   }
   dados <- train # training data matrix
   M <- c(unlist(cl)) # true classes
-  M <- factor(M, labels = unique(M))
+  M <- factor(M, labels = sort(unique(M)))
   # --------------------------------------------------------
 
   # --------------------------------------------------------
   # Estimating Gamma Parameters
-  parametersC <- lapply(1:length(unique(M)), function(i) {
-    lapply(1:cols, function(j) {
-      #print(c(i,j))
-      SubSet <- dados[M == unique(M)[i], j]
-      # --
-      param <- stats::optim(c(.5,.5), log_ver_Gamma, method = "L-BFGS-B", y = SubSet, lower = 0.1, upper = max(SubSet))$par
-      # --
-      return(param)
-    })
-  })
+  parametersC <- estimation_parameters_gamma(M, cols, dados)
 
   # --------------------------------------------------------
   Sturges <- Sturges(dados, M);
@@ -141,7 +132,46 @@ predict.FuzzyGammaNaiveBayes <- function(object,
   # --------------------------------------------------------
   # Classification
   # --------------
-  P <- lapply(1:length(unique(M)), function(i) {
+  P <- density_values_gamma(M, cols, test, parametersC, pk)
+
+  # ---------
+  N_test <- nrow(test)
+  # --
+  test <- split(test, seq(nrow(test)))
+  # --
+  if(fuzzy == T){
+    retorno <- purrr::map(test, function_membership_predict, M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols)
+    R_M_obs <- function_fuzzy_predict(retorno, P, M)
+  }else{
+    R_M_obs <- t(data.frame(matrix(unlist(P), nrow=length(P), byrow=TRUE)))
+  }
+  # ---------
+  if (type == "class") {
+    # -------------------------
+    #R_M_obs <- matrix(R_M_obs,nrow = N_test)
+    R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
+    resultado <- unique(M)[R_M_obs]
+    return(as.factor(c(resultado)))
+    # -------------------------
+  } else {
+    # -------------------------
+    Infpos <- which(R_M_obs==Inf)
+    R_M_obs[Infpos] <- .Machine$integer.max;
+    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)), nrow = N_test)
+    R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
+    # ----------
+    colnames(R_M_obs) <- unique(M)
+    return(R_M_obs)
+    # -------------------------
+  }
+}
+
+# -------------------------------------------------------
+# Functions
+
+# ----------------
+density_values_gamma <- function(M, cols, test, parametersC, pk){
+  lapply(1:length(unique(M)), function(i) {
     densidades <- sapply(1:cols, function(j) {
       stats::dgamma(test[, j], shape = parametersC[[i]][[j]][1], scale = parametersC[[i]][[j]][2])
     })
@@ -152,57 +182,20 @@ predict.FuzzyGammaNaiveBayes <- function(object,
     return(p)
   })
 
-  N_test <- nrow(test)
-  # --------------
-  # Defining how many CPU cores to use
-  core <- parallel::makePSOCKcluster(cores)
-  doParallel::registerDoParallel(core)
-  # --------------
-  # loop start
-  R_M_obs <- foreach::foreach(h = 1:N_test, .combine = rbind) %dopar% {
-
-    # ------------
-    x <- test[h, ]
-    # ------------
-
-    if (fuzzy == T) {
-
-      ACHOU_t <- pertinencia_predict(M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols,  x);
-
-      f <- sapply(1:length(unique(M)), function(i) {
-        P[[i]][h] * ACHOU_t[i]
-      })
-
-    } else {
-
-      f <- sapply(1:length(unique(M)), function(i) {
-        P[[i]][h]
-      })
-
-    }
-    # -------------------------------------------------------
-
-    return(f)
-  }
-  # ------------
-  # -------------------------
-  parallel::stopCluster(core)
-  # ---------
-  if (type == "class") {
-    # -------------------------
-    R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
-    resultado <- unique(M)[R_M_obs]
-    return(as.factor(c(resultado)))
-    # -------------------------
-  } else {
-    # -------------------------
-    Infpos <- which(R_M_obs==Inf)
-    R_M_obs[Infpos] <- .Machine$integer.max;
-    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)))
-    R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
-    # ----------
-    colnames(R_M_obs) <- unique(M)
-    return(R_M_obs)
-    # -------------------------
-  }
 }
+# ----------------
+
+# ----------------
+estimation_parameters_gamma <- function(M, cols, dados){
+  lapply(1:length(unique(M)), function(i) {
+    lapply(1:cols, function(j) {
+      SubSet <- dados[M == unique(M)[i], j]
+      # --
+      param <- stats::optim(c(.5,.5), log_ver_Gamma, method = "L-BFGS-B", y = SubSet, lower = 0.1, upper = max(SubSet))$par
+      # --
+      return(param)
+    })
+  })
+
+}
+# ----------------

@@ -54,20 +54,14 @@ FuzzyBetaNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = TRUE) {
   }
   dados <- train # training data matrix
   M <- c(unlist(cl)) # true classes
-  M <- factor(M, labels = unique(M))
+  M <- factor(M, labels = sort(unique(M)))
   #--------------------------------------------------------
   for(j in 1:cols){
     dados[, j] <- dados[, j] / (max(dados[, j])+1e-2)
   }
   #--------------------------------------------------------
   # Estimating Beta Parameters
-  parametersC <- lapply(1:length(unique(M)), function(i) {
-    lapply(1:cols, function(j) {
-      SubSet <- dados[M == unique(M)[i], j]
-      param <- MASS::fitdistr(SubSet, "beta", start = list(shape1 = 1, shape2 = 1), lower = c(0.001,0.001), upper = c(10,10))$estimate#max(SubSet) + 1e-2)$estimate
-      return(param)
-    })
-  })
+  parametersC <- estimation_parameters_beta(M, cols, dados)
   #--------------------------------------------------------
 
   #--------------------------------------------------------
@@ -143,7 +137,42 @@ predict.FuzzyBetaNaiveBayes <- function(object,
   #--------------------------------------------------------
   # Classification
   #--------------
-  P <- lapply(1:length(unique(M)), function(i) {
+  P <- density_values_beta(M, cols, test, parametersC, pk)
+  #---------
+  N_test <- nrow(test)
+  # --
+  test <- split(test, seq(nrow(test)))
+  # --
+  if(fuzzy == T){
+    retorno <- purrr::map(test, function_membership_predict, M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols)
+    R_M_obs <- function_fuzzy_predict(retorno, P, M)
+  }else{
+    R_M_obs <- t(data.frame(matrix(unlist(P), nrow=length(P), byrow=TRUE)))
+  }
+  #---------
+  if (type == "class") {
+    #-------------------------
+    #R_M_obs <- matrix(R_M_obs,nrow = N_test)
+    R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
+    resultado <- unique(M)[R_M_obs]
+    return(as.factor(c(resultado)))
+    #-------------------------
+  } else {
+    #-------------------------
+    Infpos <- which(R_M_obs==Inf)
+    R_M_obs[Infpos] <- .Machine$integer.max;
+    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)), nrow = N_test)
+    R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
+    #----------
+    colnames(R_M_obs) <- unique(M)
+    return(R_M_obs)
+    #-------------------------
+  }
+}
+
+# ----------------
+density_values_beta <- function(M, cols, test, parametersC, pk){
+  lapply(1:length(unique(M)), function(i) {
     densidades <- sapply(1:cols, function(j) {
       stats::dbeta(test[, j], shape1 = parametersC[[i]][[j]][1], shape2 = parametersC[[i]][[j]][2])
     })
@@ -154,57 +183,18 @@ predict.FuzzyBetaNaiveBayes <- function(object,
     return(p)
   })
 
-  N_test <- nrow(test)
-  #--------------
-  # Defining how many CPU cores to use
-  core <- parallel::makePSOCKcluster(cores)
-  doParallel::registerDoParallel(core)
-  #--------------
-  # loop start
-  R_M_obs <- foreach::foreach(h = 1:N_test, .combine = rbind) %dopar% {
-
-    #------------
-    x <- test[h, ]
-    #------------
-
-    if (fuzzy == T) {
-
-      ACHOU_t <- pertinencia_predict(M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols,  x);
-
-      f <- sapply(1:length(unique(M)), function(i) {
-        P[[i]][h] * ACHOU_t[i]
-      })
-
-    } else {
-
-      f <- sapply(1:length(unique(M)), function(i) {
-        P[[i]][h]
-      })
-
-    }
-    #-------------------------------------------------------
-
-    return(f)
-  }
-  #------------
-  #-------------------------
-  parallel::stopCluster(core)
-  #---------
-  if (type == "class") {
-    #-------------------------
-    R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
-    resultado <- unique(M)[R_M_obs]
-    return(as.factor(c(resultado)))
-    #-------------------------
-  } else {
-    #-------------------------
-    Infpos <- which(R_M_obs==Inf)
-    R_M_obs[Infpos] <- .Machine$integer.max;
-    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)))
-    R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
-    #----------
-    colnames(R_M_obs) <- unique(M)
-    return(R_M_obs)
-    #-------------------------
-  }
 }
+# ----------------
+
+# ----------------
+estimation_parameters_beta <- function(M, cols, dados){
+  lapply(1:length(unique(M)), function(i) {
+    lapply(1:cols, function(j) {
+      SubSet <- dados[M == unique(M)[i], j]
+      param <- MASS::fitdistr(SubSet, "beta", start = list(shape1 = 1, shape2 = 1), lower = c(0.001,0.001), upper = c(10,10))$estimate#max(SubSet) + 1e-2)$estimate
+      return(param)
+    })
+  })
+
+}
+# ----------------

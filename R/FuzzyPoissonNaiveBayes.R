@@ -63,7 +63,7 @@ FuzzyPoissonNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
   }
   dados <- train # training data matrix
   M <- c(unlist(cl)) # true classes
-  M <- factor(M, labels = unique(M))
+  M <- factor(M, labels = sort(unique(M)))
   # --------------------------------------------------------
   # --------------------------------------------------------
   # Verify data types
@@ -86,13 +86,7 @@ FuzzyPoissonNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
 
   # --------------------------------------------------------
   # Estimating Parameters
-  parametersC <- lapply(1:length(unique(M)), function(i) {
-    lapply(1:cols, function(j) {
-      SubSet <- dados[M == unique(M)[i], j]
-      param <- mean(SubSet, na.rm = TRUE)
-      return(param)
-    })
-  })
+  parametersC <- estimation_parameters_poi(M, cols, dados)
   # --------------------------------------------------------
   Sturges <- Sturges(dados, M);
   Comprim_Intervalo <- Comprim_Intervalo(dados, M, Sturges);
@@ -163,7 +157,46 @@ predict.FuzzyPoissonNaiveBayes <- function(object,
   # --------------------------------------------------------
   # Classification
   # --------------
-  P <- lapply(1:length(unique(M)), function(i) {
+  P <- density_values_poi(M, cols, test, parametersC, pk)
+  # ---------
+  N_test <- nrow(test)
+  # --
+  test <- split(test, seq(nrow(test)))
+  # --
+  if(fuzzy == T){
+    retorno <- purrr::map(test, function_membership_predict, M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols)
+    R_M_obs <- function_fuzzy_predict(retorno, P, M)
+  }else{
+    R_M_obs <- t(data.frame(matrix(unlist(P), nrow=length(P), byrow=TRUE)))
+  }
+  # ---------
+  if (type == "class") {
+    # -------------------------
+    #R_M_obs <- matrix(R_M_obs,nrow = N_test)
+    R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
+    resultado <- unique(M)[R_M_obs]
+    return(as.factor(c(resultado)))
+    # -------------------------
+  } else {
+    # -------------------------
+    Infpos <- which(R_M_obs==Inf)
+    R_M_obs[Infpos] <- .Machine$integer.max;
+    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)), nrow = N_test)
+    R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
+    # ----------
+    colnames(R_M_obs) <- unique(M)
+    return(R_M_obs)
+    # -------------------------
+  }
+}
+
+
+# -------------------------------------------------------
+# Functions
+
+# ----------------
+density_values_poi <- function(M, cols, test, parametersC, pk){
+  lapply(1:length(unique(M)), function(i) {
     densidades <- sapply(1:cols, function(j) {
       stats::dpois(round(test[, j]), lambda = parametersC[[i]][[j]][1])
     })
@@ -174,57 +207,17 @@ predict.FuzzyPoissonNaiveBayes <- function(object,
     return(p)
   })
 
-  N_test <- nrow(test)
-  # --------------
-  # Defining how many CPU cores to use
-  core <- parallel::makePSOCKcluster(cores)
-  doParallel::registerDoParallel(core)
-  # --------------
-  # loop start
-  R_M_obs <- foreach::foreach(h = 1:N_test, .combine = rbind) %dopar% {
-
-    # ------------
-    x <- test[h, ]
-    # ------------
-
-    if (fuzzy == T) {
-
-      ACHOU_t <- pertinencia_predict(M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols,  x);
-
-      f <- sapply(1:length(unique(M)), function(i) {
-        P[[i]][h] * ACHOU_t[i]
-      })
-
-    } else {
-
-      f <- sapply(1:length(unique(M)), function(i) {
-        P[[i]][h]
-      })
-
-    }
-    # -------------------------------------------------------
-
-    return(f)
-  }
-  # ------------
-  # -------------------------
-  parallel::stopCluster(core)
-  # ---------
-  if (type == "class") {
-    # -------------------------
-    R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
-    resultado <- unique(M)[R_M_obs]
-    return(as.factor(c(resultado)))
-    # -------------------------
-  } else {
-    # -------------------------
-    Infpos <- which(R_M_obs==Inf)
-    R_M_obs[Infpos] <- .Machine$integer.max;
-    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)))
-    R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
-    # ----------
-    colnames(R_M_obs) <- unique(M)
-    return(R_M_obs)
-    # -------------------------
-  }
 }
+# ----------------
+
+# ----------------
+estimation_parameters_poi <- function(M, cols, dados){
+  lapply(1:length(unique(M)), function(i) {
+    lapply(1:cols, function(j) {
+      SubSet <- dados[M == unique(M)[i], j]
+      param <- mean(SubSet, na.rm = TRUE)
+      return(param)
+    })
+  })
+}
+# ----------------

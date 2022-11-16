@@ -5,7 +5,7 @@
 #'
 #' @param train matrix or data frame of training set cases.
 #' @param cl factor of true classifications of training set
-#' @param metd Method of transforming the triangle into scalar, It is the type of data entry for the test sample, use metd 1 if you want to use the Baricentro technique and use metd 2 if you want to use the Q technique of the uniformity test (article: Directional Statistics and Shape analysis).
+#' @param metd Method of transforming the triangle into scalar, It is the type of data entry for the test sample, use metd 1 if you want to use the Yager technique, metd 2 if you want to use the Q technique of the uniformity test (article: Directional Statistics and Shape analysis), and metd 3 if you want to use the Thorani technique
 #' @param cores  how many cores of the computer do you want to use (default = 2)
 #'
 #' @return A vector of classifications
@@ -59,7 +59,7 @@ ExpNBFuzzyParam.default <- function(train, cl, metd = 1, cores = 2) {
   }
   dados <- train # training data matrix
   M <- c(unlist(cl)) # true classes
-  M <- factor(M, labels = unique(M))
+  M <- factor(M, labels = sort(unique(M)))
   # --------------------------------------------------------
   # Finding lambdas for each class
   lambdas <- lapply(1:length(unique(M)), function(i) colMeans(subset(dados, M == i)))
@@ -150,8 +150,8 @@ predict.ExpNBFuzzyParam <- function(object,
       lapply(1:length(lambdas), function(i) { # loop to groups
         trian <- lapply(1:length(lambdas[[1]]), function(k) { # loop to dimensions
           t(sapply(1:length(alpha), function(j) {
-            a <- log(dexp(x = as.numeric(x[k]), rate = 1 / as.numeric(Parameters_lambda[[i]][[k]][j, 1])))
-            b <- log(dexp(x = as.numeric(x[k]), rate = 1 / as.numeric(Parameters_lambda[[i]][[k]][j, 2])))
+            a <- dexp(x = as.numeric(x[k]), rate = 1 / as.numeric(Parameters_lambda[[i]][[k]][j, 1]), log = T)
+            b <- dexp(x = as.numeric(x[k]), rate = 1 / as.numeric(Parameters_lambda[[i]][[k]][j, 2]), log = T)
 
             a <- ifelse(a == -Inf, 1e-06, a)
             b <- ifelse(b == -Inf, 1e-06, b)
@@ -172,33 +172,26 @@ predict.ExpNBFuzzyParam <- function(object,
     # Transforming Vector to Scalar
     # ------------
     R_M <- switch(metd,
-      # ------------
-      # Barycenter
-      "1" = {
-        # ------------
-        sapply(1:length(unique(M)), function(i) vec_trian[[i]][2] * (((vec_trian[[i]][2] - vec_trian[[i]][1]) * (vec_trian[[i]][3] - vec_trian[[i]][2]) + 1) / 3))
-        # ------------
-      },
-      "2" = {
-        # ------------
-        # Using distance Q
-        sapply(1:length(unique(M)), function(i) {
-          # ------------
-          # Start 3 values
-          y <- vec_trian[[i]]
-          # ------------
-          # getting the product zz*
-          S <- y %*% t(Conj(y)) # matrix k x k
-          # ------------
-          # getting the eigenvalues
-          l <- eigen(S)$values
-          # Calculating Q
-          Q <- 3 * (l[1] - l[2])^2
-          # ------------
-          return(Q)
-        })
-        # ------------
-      }
+                  # ------------
+                  # Barycenter
+                  # yager Distance
+                  "1" = {
+                    # ------------
+                    Yagerdistance(vec_trian, M)
+                    # ------------
+                  },
+                  "2" = {
+                    # ------------
+                    # Using distance Q
+                    Qdistance(vec_trian, M)
+                    # ------------
+                  },
+                  "3" = {
+                    # ------------
+                    # Thorani Distance
+                    Thoranidistance(vec_trian, M)
+                    # ------------
+                  }
     )
     # --------------------------------------------------------
     # R_M_class <- which.max(produto)
@@ -212,6 +205,7 @@ predict.ExpNBFuzzyParam <- function(object,
   # ---------
   if (type == "class") {
     # -------------------------
+    R_M_obs <- matrix(R_M_obs,nrow = N_test)
     R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
     resultado <- unique(M)[R_M_obs]
     return(as.factor(c(resultado)))
@@ -220,7 +214,7 @@ predict.ExpNBFuzzyParam <- function(object,
     # -------------------------
     Infpos <- which(R_M_obs==Inf)
     R_M_obs[Infpos] <- .Machine$integer.max;
-    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)))
+    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)), nrow = N_test)
     R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
     # ----------
     colnames(R_M_obs) <- unique(M)

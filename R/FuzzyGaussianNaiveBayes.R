@@ -56,7 +56,7 @@ FuzzyGaussianNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = TRUE) 
   }
   dados <- train # training data matrix
   M <- c(unlist(cl)) # true classes
-  M <- factor(M, labels = unique(M))
+  M <- factor(M, labels = sort(unique(M)))
   # -------------------------------
   N <- nrow(dados) # Number of observations
   # -------------------------------
@@ -264,6 +264,7 @@ predict.FuzzyGaussianNaiveBayes <- function(object,
   # ---------
   if (type == "class") {
     # -------------------------
+    R_M_obs <- matrix(R_M_obs,nrow = N_test)
     R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
     resultado <- unique(M)[R_M_obs]
     return(as.factor(c(resultado)))
@@ -272,7 +273,7 @@ predict.FuzzyGaussianNaiveBayes <- function(object,
     # -------------------------
     Infpos <- which(R_M_obs==Inf)
     R_M_obs[Infpos] <- .Machine$integer.max;
-    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)))
+    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)), nrow = N_test)
     R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
     # ----------
     colnames(R_M_obs) <- unique(M)

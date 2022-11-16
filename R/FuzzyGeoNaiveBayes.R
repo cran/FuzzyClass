@@ -1,6 +1,6 @@
-#' Fuzzy Naive Bayes Trapezoidal Classifier
+#' Fuzzy Naive Bayes Geometric Classifier
 #'
-#' \code{FuzzyTrapezoidalNaiveBayes} Fuzzy Naive Bayes Trapezoidal Classifier
+#' \code{FuzzyGeoNaiveBayes} Naive Bayes Geometric Classifier
 #'
 #'
 #' @param train matrix or data frame of training set cases.
@@ -11,44 +11,51 @@
 #' @return A vector of classifications
 #'
 #' @references
-#' \insertRef{de2022fuzzy}{FuzzyClass}
+#' \insertRef{moraes2021new}{FuzzyClass}
 #'
 #' @examples
 #'
 #' set.seed(1) # determining a seed
-#' data(iris)
+#' class1 <- data.frame(vari1 = rgeom(100,prob = 0.2),
+#'                      vari2 = rgeom(100,prob = 0.2),
+#'                      vari3 = rgeom(100,prob = 0.2), class = 1)
+#' class2 <- data.frame(vari1 = rgeom(100,prob = 0.5),
+#'                      vari2 = rgeom(100,prob = 0.5),
+#'                      vari3 = rgeom(100,prob = 0.5), class = 2)
+#' class3 <- data.frame(vari1 = rgeom(100,prob = 0.9),
+#'                      vari2 = rgeom(100,prob = 0.9),
+#'                      vari3 = rgeom(100,prob = 0.9), class = 3)
+#' data <- rbind(class1,class2,class3)
 #'
 #' # Splitting into Training and Testing
-#' split <- caTools::sample.split(t(iris[, 1]), SplitRatio = 0.7)
-#' Train <- subset(iris, split == "TRUE")
-#' Test <- subset(iris, split == "FALSE")
+#' split <- caTools::sample.split(t(data[, 1]), SplitRatio = 0.7)
+#' Train <- subset(data, split == "TRUE")
+#' Test <- subset(data, split == "FALSE")
 #' # ----------------
 #' # matrix or data frame of test set cases.
 #' # A vector will be interpreted as a row vector for a single case.
-#' test <- Test[, -5]
-#' fit_NBT <- FuzzyTrapezoidalNaiveBayes(
-#'   train = Train[, -5],
-#'   cl = Train[, 5], cores = 2
+#' test <- Test[, -4]
+#' fit_NBT <- FuzzyGeoNaiveBayes(
+#'   train = Train[, -4],
+#'   cl = Train[, 4], cores = 2
 #' )
 #'
 #' pred_NBT <- predict(fit_NBT, test)
 #'
 #' head(pred_NBT)
-#' head(Test[, 5])
-#' @importFrom caTools sample.split
-#'
+#' head(Test[, 4])
 #' @export
-FuzzyTrapezoidalNaiveBayes <- function(train, cl, cores = 2, fuzzy = T) {
-  UseMethod("FuzzyTrapezoidalNaiveBayes")
+FuzzyGeoNaiveBayes <- function(train, cl, cores = 2, fuzzy = T) {
+  UseMethod("FuzzyGeoNaiveBayes")
 }
 
 #' @export
-FuzzyTrapezoidalNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
+FuzzyGeoNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
 
   # --------------------------------------------------------
   # Estimating class parameters
   train <- as.data.frame(train)
-  cols <- ncol(train) # Number of variables
+  cols <- ncol(train) - 1# Number of variables
   if(is.null(cols)){
     cols <- 1
   }
@@ -56,25 +63,47 @@ FuzzyTrapezoidalNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) 
   M <- c(unlist(cl)) # true classes
   M <- factor(M, labels = sort(unique(M)))
   intervalos <- 10 # Division to memberships
+
+
+  #------------------------------------------------------------
+  # Verify data types
+  verifyNumbers <- sapply(1:cols, function(i){
+    set.seed(3)
+    n = 3
+    subset <- sample(dados[,i],size = n, replace = F)
+    result <- subset == floor(subset)
+    if(sum(result) == n){
+      result <- 1
+    }else{
+      result <- 0
+    }
+    return(result)
+  })
+
+  # --------------------------------------------------------
+  if(sum(verifyNumbers) != cols){ stop("All variables must be discrete values.") }
+
   # --------------------------------------------------------
   # --------------------------------------------------------
   # Estimating class memberships
   pertinicesC <- lapply(1:length(unique(M)), function(i) {
     lapply(1:cols, function(j) {
       SubSet <- dados[M == unique(M)[i], j]
-      getMembershipsTrapezoidal(SubSet, intervalos)
+      getMemberships(SubSet, intervalos)
     })
   })
   # --------------------------------------------------------
-
   # --------------------------------------------------------
-  # Estimating Trapezoidal Parameters
+  # Estimating Geometric Parameters
   parametersC <- lapply(1:length(unique(M)), function(i) {
-    t(sapply(1:cols, function(j) {
+    lapply(1:cols, function(j) {
+      # print(c(i,j))
       SubSet <- dados[M == unique(M)[i], j]
-      getParametersTrapezoidal(SubSet)
-    }))
+      param <- MASS::fitdistr(SubSet, "geometric")$estimate
+      return(param)
+    })
   })
+
   # --------------------------------------------------------
 
   # -------------------------------------------------------
@@ -87,21 +116,21 @@ FuzzyTrapezoidalNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) 
     intervalos = intervalos,
     fuzzy = fuzzy
   ),
-  class = "FuzzyTrapezoidalNaiveBayes"
+  class = "FuzzyGeoNaiveBayes"
   )
 }
 # -------------------------
 
 
 #' @export
-print.FuzzyTrapezoidalNaiveBayes <- function(x, ...) {
+print.FuzzyGeoNaiveBayes <- function(x, ...) {
   if (x$fuzzy == T) {
     # -----------------
-    cat("\nFuzzy Naive Bayes Trapezoidal Classifier for Discrete Predictors\n\n")
+    cat("\nFuzzy Naive Bayes Geometric Classifier for Discrete Predictors\n\n")
     # -----------------
   } else {
     # -----------------
-    cat("\nNaive Bayes Trapezoidal Classifier for Discrete Predictors\n\n")
+    cat("\nNaive Bayes Geometric Classifier for Discrete Predictors\n\n")
     # -----------------
   }
   cat("Class:\n")
@@ -110,7 +139,7 @@ print.FuzzyTrapezoidalNaiveBayes <- function(x, ...) {
 }
 
 #' @export
-predict.FuzzyTrapezoidalNaiveBayes <- function(object,
+predict.FuzzyGeoNaiveBayes <- function(object,
                                                newdata,
                                                type = "class",
                                                ...) {
@@ -150,46 +179,7 @@ predict.FuzzyTrapezoidalNaiveBayes <- function(object,
 
       sapply(1:cols, function(j) {
 
-        # x <= a
-        if (x[j] <= parametersC[[i]][j, 1]) {
-          # --------------
-          resultadoPerClass <- resultadoPerClass * 0
-          # --------------
-        }
-        # --------------
-        # a < x < c
-        if ((x[j] > parametersC[[i]][j, 1]) & (x[j] < parametersC[[i]][j, 2])) {
-          # --------------
-          resultadoPerClass <- resultadoPerClass *
-            (((x[j] - parametersC[[i]][j, 1]) / (parametersC[[i]][j, 2] - parametersC[[i]][j, 1])) *
-              (2 / ((parametersC[[i]][j, 4] - parametersC[[i]][j, 1]) + (parametersC[[i]][j, 3] - parametersC[[i]][j, 2]))))
-          resultadoPerClass <- unlist(resultadoPerClass)
-          # --------------
-        }
-        # --------------
-        # c <= x <= d
-        if ((x[j] >= parametersC[[i]][j, 2]) & (x[j] >= parametersC[[i]][j, 3])) {
-          # --------------
-          resultadoPerClass <- resultadoPerClass *
-            (2 / ((parametersC[[i]][j, 4] - parametersC[[i]][j, 1]) +
-              (parametersC[[i]][j, 3] - parametersC[[i]][j, 2])))
-          # --------------
-        }
-        # --------------
-        # d< x < b
-        if ((x[j] > parametersC[[i]][j, 3]) & (x[j] < parametersC[[i]][j, 4])) {
-          # --------------
-          resultadoPerClass <- resultadoPerClass *
-            (((parametersC[[i]][j, 4] - x[j]) / (parametersC[[i]][j, 4] - parametersC[[i]][j, 3])) * (2 / ((parametersC[[i]][j, 4] - parametersC[[i]][j, 1]) + (parametersC[[i]][j, 3] - parametersC[[i]][j, 2]))))
-          # --------------
-        }
-        # --------------
-        # b <= x
-        if (parametersC[[i]][j, 4] <= x[j]) {
-          # --------------
-          resultadoPerClass <- resultadoPerClass * 0
-          # --------------
-        }
+        resultadoPerClass <- ((1 - parametersC[[i]][[j]])^(x[j] - 1)) * parametersC[[i]][[j]]
 
         # -----------------------------------------------------------------------
         # -----------------------------------------------------------------------
@@ -220,7 +210,6 @@ predict.FuzzyTrapezoidalNaiveBayes <- function(object,
       # --------------------------------------------------------
     })
     # --------------------------------------------------------
-    res[res==0] <- 1e-5
     produto <- matrix(as.numeric(res), ncol = length(unique(M)))
     produto <- apply(produto, 2, prod)
     # --------------------------------------------------------
@@ -229,6 +218,7 @@ predict.FuzzyTrapezoidalNaiveBayes <- function(object,
     # --------------------------------------------------------
     return(R_M_class)
   }
+
   # ------------
   # -------------------------
   parallel::stopCluster(core)
@@ -253,62 +243,63 @@ predict.FuzzyTrapezoidalNaiveBayes <- function(object,
   }
 }
 
-# --------------------------------------------------
-getParametersTrapezoidal <- function(sample) {
+#' @importFrom stats median.default var
+getMemberships <- function(sample, breaks) {
   # -------------------------
   # sample length
   n <- length(sample)
   # -------------------------
   # min value
-  minimum <- min(sample)
+  Min <- min(sample)
   # -------------------------
   # max value
-  maximum <- max(sample)
-  variance <- var(sample)
-  m <- expected <- median.default(sample)
+  Max <- max(sample)
   # -------------------------
-  model <- function(x) {
-    # ----------
-    # Expected value
-    F1 <- ((-minimum * x[1] - x[1]^2 + maximum * x[2] + x[2]^2 + maximum^2 - minimum^2) /
-             (3 * x[2] - 3 * x[1] + 3 * maximum - 3 * minimum)) - expected
-    # ----------
-    # Variance Value
-    F2 <- (((6 * (x[2] - x[1])^4 + 12 * ((x[1] - minimum) + (maximum - x[2])) *
-               (x[2] - x[1])^3 + (12 * ((x[1] - minimum) + (maximum - x[2]))^2 - 6 * (x[1] - minimum) * (maximum - x[2])) * (x[2] - x[1])^2) / (18 * ((x[1] - minimum) + 2 * (x[2] - x[1]) + (maximum - x[2]))^2)) +
-             ((6 * ((x[1] - minimum) + (maximum - x[2])) * ((x[1] - minimum)^2 + (x[1] - minimum) * (maximum - x[2]) + (maximum - x[2])^2) * (x[2] - x[1]) +
-                 ((x[1] - minimum) + (maximum - x[2]))^2 * ((x[1] - minimum)^2 + (x[1] - minimum) * (maximum - x[2]) + (maximum - x[2])^2)) / (18 * ((x[1] - minimum) + 2 * (x[2] - x[1]) + (maximum - x[2]))^2))) - variance
-    # -------------------------
-    # Return
-    return(c(F1 = F1, F2 = F2))
-    # -------------------------
+  intervalos <- breaks
+  pertinences <- matrix(nrow = intervalos, ncol = 3)
+
+  # -------------------------
+
+  passo <- (Max - Min) / intervalos
+  # -------------------------
+  freq <- matrix(nrow = intervalos, ncol = 3)
+  # -------------------------
+  for (i in 1:intervalos) {
+    freq[i, 1] <- Min + passo * (i - 1)
+    freq[i, 2] <- freq[i, 1] + passo
+    freq[i, 3] <- 0
   }
   # -------------------------
-  # midpoint
-  pmedio <- minimum + ((maximum - minimum) / 2)
-  # --------
-  ss <- rootSolve::multiroot(f = model, start = c(pmedio, pmedio + .1))
-  ss <- c(ss$root[1], ss$root[2])
-  # --------
-  if (ss[1] > ss[2]) {
-    # --------
-    topo1 <- ss[2]
-    topo2 <- ss[1]
-    # --------
-  } else {
-    # --------
-    topo1 <- ss[1]
-    topo2 <- ss[2]
-    # --------
+  for (i in 1:n) {
+    for (j in 1:intervalos) {
+      # -------------------------
+      if (j == intervalos) {
+        if ((sample[i] >= freq[j, 1]) & (sample[i] <= freq[j, 2])) {
+          freq[j, 3] <- freq[j, 3] + 1
+        }
+      } else {
+        # -------------------------
+        if ((sample[i] >= freq[j, 1]) & (sample[i] < freq[j, 2])) {
+          freq[j, 3] <- freq[j, 3] + 1
+        }
+      }
+    }
   }
   # -------------------------
-  # Verificando limites
-  topo1 <- ifelse(topo1 < minimum, minimum, topo1)
-  # ---
-  topo2 <- ifelse(topo2 <= topo1, topo1,
-                  ifelse(topo2 >= maximum, maximum, topo2)
-  )
+  maxFreq <- max(freq[1:intervalos, 3])
   # -------------------------
-  # Parameters Return
-  return(c(minimum, topo1, topo2, maximum))
+  for (i in 1:intervalos) {
+    pertinences[i, 1] <- freq[i, 1]
+    pertinences[i, 2] <- freq[i, 2]
+    # -------------------------
+    if (freq[i, 1] == 0) {
+      pertinences[i, 3] <- 0.001
+    } else {
+      pertinences[i, 3] <- freq[i, 3] / maxFreq
+    }
+  }
+
+  # -------------------------
+  return(pertinences)
+  # -------------------------
 }

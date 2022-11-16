@@ -56,7 +56,7 @@ FuzzyTriangularNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
   }
   dados <- train # training data matrix
   M <- c(unlist(cl)) # true classes
-  M <- factor(M, labels = unique(M))
+  M <- factor(M, labels = sort(unique(M)))
   # intervalos = 10 # Division to memberships
   # --------------------------------------------------------
   # # --------------------------------------------------------
@@ -71,10 +71,7 @@ FuzzyTriangularNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
 
   # --------------------------------------------------------
   # Estimating Triangular Parameters
-  parametersC <- lapply(1:length(unique(M)), function(i) {
-    SubSet <- dados[M == unique(M)[i], ]
-    getParametersTriangular(SubSet)
-  })
+  parametersC <- estimation_parameters_triang(M, cols, dados)
   # --------------------------------------------------------
   Sturges <- Sturges(dados, M);
   Comprim_Intervalo <- Comprim_Intervalo(dados, M, Sturges);
@@ -146,78 +143,22 @@ predict.FuzzyTriangularNaiveBayes <- function(object,
   # --------------------------------------------------------
   # Classification
   # --------------
-  P <- lapply(1:length(unique(M)), function(i) {
-    densidades <- sapply(1:cols, function(j) {
-      EnvStats::dtri(test[, j], min = parametersC[[i]][1, j], max = parametersC[[i]][2, j], mode = parametersC[[i]][3, j] + 1e-8)
-    })
-    densidades <- apply(densidades, 1, prod)
-    # Calcula a P(w_i) * P(X_k | w_i)
-    p <- pk[[i]] * densidades
-    # ---
-    return(p)
-  })
-
+  P <- density_values_triang(M, cols, test, parametersC, pk)
+  # ---------
   N_test <- nrow(test)
-  # --------------
-  # Defining how many CPU cores to use
-  core <- parallel::makePSOCKcluster(cores)
-  doParallel::registerDoParallel(core)
-  # --------------
-  # loop start
-  R_M_obs <- foreach::foreach(h = 1:N_test, .combine = rbind) %dopar% {
-
-    # ------------
-    x <- test[h, ]
-    # ------------
-    ACHOU_t <- c()
-    ACHOU <- 0
-
-    if (fuzzy == T) {
-      # ---------------
-      for (classe in 1:length(unique(M))) {
-        # --
-        # --
-        for (coluna in 1:cols) { # coluna da classe
-          for (linhaF in 1:Sturges[[classe]]) { # linha da classe
-            faixa <- minimos[[classe]][coluna] + Comprim_Intervalo[[classe]][coluna] # faixa de frequencia inicial
-            if (x[coluna] < faixa) { # ve se valor da classe pertence aaquela faixa
-              ACHOU[coluna] <- Pertinencia[[classe]][linhaF, coluna] # acumula valor na faixa de frequencia e interrompe este ultimo for
-              break
-            }
-            if (linhaF == Sturges[[classe]]) {
-              ACHOU[coluna] <- Pertinencia[[classe]][linhaF, coluna]
-              break
-            }
-            faixa <- faixa + Comprim_Intervalo[[classe]][coluna] # troca de faixa -> proxima
-          }
-        }
-        # ---
-        ACHOU_t <- rbind(ACHOU_t, ACHOU) # Classes são as linhas
-        # ---
-      }
-      # -----
-      row.names(ACHOU_t) <- unique(M)
-      # --------------------------------------------------------
-      ACHOU_t <- apply(ACHOU_t, 1, prod)
-
-      f <- sapply(1:length(unique(M)), function(i) {
-        P[[i]][h] * ACHOU_t[i]
-      })
-    } else {
-      f <- sapply(1:length(unique(M)), function(i) {
-        P[[i]][h] #* ACHOU_t[i]
-      })
-    }
-    # -------------------------------------------------------
-
-    return(f)
+  # --
+  test <- split(test, seq(nrow(test)))
+  # --
+  if(fuzzy == T){
+    retorno <- purrr::map(test, function_membership_predict, M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols)
+    R_M_obs <- function_fuzzy_predict(retorno, P, M)
+  }else{
+    R_M_obs <- t(data.frame(matrix(unlist(P), nrow=length(P), byrow=TRUE)))
   }
-  # ------------
-  # -------------------------
-  parallel::stopCluster(core)
   # ---------
   if (type == "class") {
     # -------------------------
+    #R_M_obs <- matrix(R_M_obs,nrow = N_test)
     R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
     resultado <- unique(M)[R_M_obs]
     return(as.factor(c(resultado)))
@@ -226,7 +167,7 @@ predict.FuzzyTriangularNaiveBayes <- function(object,
     # -------------------------
     Infpos <- which(R_M_obs==Inf)
     R_M_obs[Infpos] <- .Machine$integer.max;
-    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)))
+    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)), nrow = N_test)
     R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
     # ----------
     colnames(R_M_obs) <- unique(M)
@@ -234,6 +175,9 @@ predict.FuzzyTriangularNaiveBayes <- function(object,
     # -------------------------
   }
 }
+
+# -------------------------------------------------------
+# Functions
 
 # --------------------------------------------------
 getParametersTriangular <- function(sample) {
@@ -249,6 +193,9 @@ getParametersTriangular <- function(sample) {
   ac <- 2 * qc[1, ] - qc[2, ]
   bc <- 2 * qc[4, ] - qc[3, ]
   mc <- (uc * bc + vc * ac) / (uc + vc)
+  if( any(ac == bc)){
+    mc[which(ac==bc)] = ac[which(ac==bc)]
+  }
   # ----------
   names(ac) <- colnames(sample)
   names(bc) <- colnames(sample)
@@ -257,3 +204,29 @@ getParametersTriangular <- function(sample) {
   # Parameters Return
   return(rbind(ac, bc, mc))
 }
+
+
+# ----------------
+density_values_triang <- function(M, cols, test, parametersC, pk){
+  lapply(1:length(unique(M)), function(i) {
+    densidades <- sapply(1:cols, function(j) {
+      EnvStats::dtri(test[, j], min = parametersC[[i]][1, j], max = parametersC[[i]][2, j]+ 1e-7, mode = parametersC[[i]][3, j] + 1e-8)
+    })
+    densidades <- apply(densidades, 1, prod)
+    # Calcula a P(w_i) * P(X_k | w_i)
+    p <- pk[[i]] * densidades
+    # ---
+    return(p)
+  })
+
+}
+# ----------------
+
+# ----------------
+estimation_parameters_triang <- function(M, cols, dados){
+  lapply(1:length(unique(M)), function(i) {
+    SubSet <- dados[M == unique(M)[i], ]
+    getParametersTriangular(SubSet)
+  })
+}
+# ----------------

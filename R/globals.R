@@ -1,1 +1,1 @@
-utils::globalVariables(c("h"))
+utils::globalVariables(c("h","N_test"))

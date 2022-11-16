@@ -56,7 +56,7 @@ FuzzyNaiveBayes.default <- function(train, cl, fuzzy = T, m = NULL, Pi = NULL) {
   }
   dados <- train # training data matrix
   M <- c(unlist(cl)) # true classes
-  if(!is.factor(M))  M <- factor(M, levels = unique(M))
+  if(!is.factor(M))  M <- factor(M, labels = sort(unique(M)))
   # --
 
   # --
@@ -491,6 +491,7 @@ predict_continuo_nonfuzzy <- function(test, M, cols, parametersC, pk, Pertinenci
   # ---------
   if (type == "class") {
     # -------------------------
+    R_M_obs <- matrix(R_M_obs,nrow = N_test)
     R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
     resultado <- unique(M)[R_M_obs]
     return(as.factor(c(resultado)))
@@ -499,7 +500,7 @@ predict_continuo_nonfuzzy <- function(test, M, cols, parametersC, pk, Pertinenci
     # -------------------------
     Infpos <- which(R_M_obs == Inf)
     R_M_obs[Infpos] <- .Machine$integer.max
-    R_M_obs <- matrix(unlist(R_M_obs), ncol = length(unique(M)))
+    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)), nrow = N_test)
     R_M_obs <- R_M_obs / rowSums(R_M_obs, na.rm = T)
     # ----------
     colnames(R_M_obs) <- unique(M)

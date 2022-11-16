@@ -5,7 +5,12 @@ Sturges <- function(dados, M) {
 
   Output <- lapply(1:length(unique(M)), function(i) {
     SubSet <- dados[M == unique(M)[i], ]
-    return(round(sqrt(nrow(SubSet))))
+    if(ncol(dados) == 1){
+      return(round(sqrt(length(SubSet))))
+    }else{
+      return(round(sqrt(nrow(SubSet))))
+    }
+
   })
 
   return(Output)
@@ -19,7 +24,11 @@ Comprim_Intervalo <- function(dados, M, Sturges) {
 
   Output <- lapply(1:length(unique(M)), function(i) {
     SubSet <- dados[M == unique(M)[i], ]
-    comp <- (apply(SubSet, 2, max) - apply(SubSet, 2, min)) / Sturges[[i]]
+    if(ncol(dados) == 1){
+      comp <- (max(SubSet) - min(SubSet)) / Sturges[[i]]
+    }else{
+      comp <- (apply(SubSet, 2, max) - apply(SubSet, 2, min)) / Sturges[[i]]
+    }
   })
 
   return(Output)
@@ -32,12 +41,17 @@ minimos <- function(dados, M, cols) {
   Output <- lapply(1:length(unique(M)), function(i) {
     sapply(1:cols, function(j) {
       SubSet <- dados[M == unique(M)[i], ]
-      return(min(SubSet[, j]))
+      if (ncol(dados) == 1){
+        return(min(SubSet))
+      }else{
+        return(min(SubSet[, j]))
+      }
     })
   })
 
   return(Output)
 }
+
 #---------------
 
 
@@ -53,9 +67,11 @@ Freq <- function(dados, M, Comprim_Intervalo, Sturges, minimos, cols) {
   for (classe in 1:length(unique(M))) {
     # --
     SubSet <- dados[M == unique(M)[classe], ]
+    SubSet <- as.data.frame(SubSet)
+    NN = nrow(SubSet)
     # --
     for (coluna in 1:cols) { # coluna da classe
-      for (linhaClasse in 1:nrow(SubSet)) { # linha da classe
+      for (linhaClasse in 1:NN) { # linha da classe
         faixa <- minimos[[classe]][coluna] + Comprim_Intervalo[[classe]][coluna] # faixa de frequencia inicial
         for (linhaFreq in 1:Sturges[[classe]]) { # linha da Freq
           # --
@@ -76,7 +92,6 @@ Freq <- function(dados, M, Comprim_Intervalo, Sturges, minimos, cols) {
   return(Freq)
   #----------
 }
-
 
 
 #' @noRd
@@ -117,12 +132,19 @@ Intervalos_Valores <- function(dados, M, Comprim_Intervalo, Sturges, minimos, co
 #' @noRd
 Pertinencia <- function(Freq, dados, M) {
 
+  dados <- as.data.frame(dados)
   Output <- lapply(1:length(unique(M)), function(i) {
-    Freq[[i]] / nrow(dados[M == unique(M)[i], ])
+    if(ncol(dados) == 1){
+      NN = length(dados[M == unique(M)[i], ])
+    }else{
+      NN = nrow(dados[M == unique(M)[i], ])
+    }
+    Freq[[i]] / NN
   })
 
   return(Output)
 }
+
 
 
 #' @noRd
@@ -138,8 +160,11 @@ pertinencia_predict <- function(M, Sturges, minimos, Comprim_Intervalo, Pertinen
     for (coluna in 1:cols) { # coluna da classe
       for (linhaF in 1:Sturges[[classe]]) { # linha da classe
         faixa <- minimos[[classe]][coluna] + Comprim_Intervalo[[classe]][coluna] # faixa de frequencia inicial
-        if (x[coluna] < faixa) { # ve se valor da classe pertence aaquela faixa
+        #print(paste("Coluna:", coluna, "classe:", classe, "linhaF", linhaF))
+        #print(c(coluna,x[[coluna]],faixa))
+        if (x[[coluna]] < faixa) { # ve se valor da classe pertence aaquela faixa
           ACHOU[coluna] <- Pertinencia[[classe]][linhaF, coluna] # acumula valor na faixa de frequencia e interrompe este ultimo for
+          #if(ACHOU[coluna] != 0)
           break
         }
         if (linhaF == Sturges[[classe]]) {
@@ -162,6 +187,34 @@ pertinencia_predict <- function(M, Sturges, minimos, Comprim_Intervalo, Pertinen
 
 }
 
+
+
+# ----------------
+#' @noRd
+function_membership_predict <- function(x, M = M, Sturges = Sturges, minimos = minimos, Comprim_Intervalo = Comprim_Intervalo, Pertinencia = Pertinencia, cols = cols){
+
+  ACHOU_t <- pertinencia_predict(M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols, x);
+  return(ACHOU_t)
+
+}
+# ----------------
+
+# ----------------
+#' @noRd
+function_fuzzy_predict <- function(retorno, P, M){
+
+  retorno2 <- data.frame(matrix(unlist(retorno), nrow=length(retorno), byrow=TRUE))
+  f <- sapply(1:length(unique(M)), function(i) {
+    P[[i]] * retorno2[,i]
+  })
+
+  return(f)
+
+}
+# ----------------
+
+
+
 #' @noRd
 log_ver_Gamma <- function(theta,y){
 
@@ -170,7 +223,67 @@ log_ver_Gamma <- function(theta,y){
   beta = theta[2]
   alpha = theta[1]
 
-  saida <- - sum(log(dgamma(y,shape = alpha, rate = beta)),na.rm=T)
+  saida <- - sum(dgamma(y,shape = alpha, scale = beta, log = T),na.rm=T)
 
   return(saida)
+}
+
+
+#' @noRd
+#' Barycenter
+#' Yager method
+Yagerdistance <- function(vec_trian, M){
+
+  value <- sapply(1:length(unique(M)), function(i) (vec_trian[[i]][1] + 2*vec_trian[[i]][2] + vec_trian[[i]][3]) / 4)
+  return(value)
+
+}
+
+#' @noRd
+#' Using distance Q
+Qdistance <- function(vec_trian, M){
+
+  # ------------
+  # Using distance Q
+  value <- sapply(1:length(unique(M)), function(i) {
+      # ------------
+      # Start 3 values
+      y <- vec_trian[[i]]
+      # ------------
+      # getting the product zz*
+      S <- y %*% t(Conj(y)) # matrix k x k
+      # ------------
+      # getting the eigenvalues
+      l <- eigen(S)$values
+      # Calculating Q
+      Q <- 3 * (l[1] - l[2])^2
+      # ------------
+      return(Q)
+    })
+    # ------------
+
+  return(value)
+
+}
+
+
+#' @noRd
+#' Yagger
+
+#' @noRd
+#' Thorani
+#' Article: Ordering Generalized Trapezoidal Fuzzy Numbers Using Orthocentre of Centroids
+#' "changes were made"
+Thoranidistance <- function(vec_trian, M){
+
+  # ------------
+  # Using distance Q
+  value <- sapply(1:length(unique(M)), function(i) {
+    0.333*
+      vec_trian[[i]][2] * ((vec_trian[[i]][2] - vec_trian[[i]][1])*(vec_trian[[i]][3] - vec_trian[[i]][2]) + 1)
+
+
+  })
+
+  return(value)
 }

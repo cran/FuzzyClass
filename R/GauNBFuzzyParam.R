@@ -5,7 +5,8 @@
 #'
 #' @param train matrix or data frame of training set cases.
 #' @param cl factor of true classifications of training set
-#' @param metd Method of transforming the triangle into scalar, It is the type of data entry for the test sample, use metd 1 if you want to use the Baricentro technique and use metd 2 if you want to use the Q technique of the uniformity test (article: Directional Statistics and Shape analysis).
+#' @param alphacut value of the alpha-cut parameter, this value is between 0 and 1.
+#' @param metd Method of transforming the triangle into scalar, It is the type of data entry for the test sample, use metd 1 if you want to use the Yager technique, metd 2 if you want to use the Q technique of the uniformity test (article: Directional Statistics and Shape analysis), and metd 3 if you want to use the Thorani technique
 #' @param cores  how many cores of the computer do you want to use (default = 2)
 #'
 #' @return A vector of classifications
@@ -40,12 +41,12 @@
 #' @importFrom Rdpack reprompt
 #'
 #' @export
-GauNBFuzzyParam <- function(train, cl, metd = 1, cores = 2) {
+GauNBFuzzyParam <- function(train, cl, alphacut = 0.0001, metd = 2, cores = 2) {
   UseMethod("GauNBFuzzyParam")
 }
 
 #' @export
-GauNBFuzzyParam.default <- function(train, cl, metd = 1, cores = 2) {
+GauNBFuzzyParam.default <- function(train, cl, alphacut = 0.0001, metd = 2, cores = 2) {
 
   # --------------------------------------------------------
   # Estimating class parameters
@@ -56,7 +57,7 @@ GauNBFuzzyParam.default <- function(train, cl, metd = 1, cores = 2) {
   }
   dados <- train # training data matrix
   M <- c(unlist(cl)) # true classes
-  M <- factor(M, labels = unique(M))
+  M <- factor(M, labels = sort(unique(M)))
   # --------------------------------------------------------
   # Finding Mu and Sigma for each class
   medias <- lapply(1:length(unique(M)), function(i) colMeans(subset(dados, M == unique(M)[i])))
@@ -64,7 +65,7 @@ GauNBFuzzyParam.default <- function(train, cl, metd = 1, cores = 2) {
   # --------------------------------------------------------
   # --------------------------------------------------------
   # Estimating Triangular Parameters
-  alpha <- seq(0.0001, 1.1, 0.1)
+  alpha <- seq(alphacut, 1, 0.1)
   # -------------------------------
   N <- nrow(dados) # Number of observations
   # -------------------------------
@@ -79,7 +80,7 @@ GauNBFuzzyParam.default <- function(train, cl, metd = 1, cores = 2) {
             medias[[i]][k] + (qnorm(1 - alpha[j] / 2) * (sqrt(varian[[i]][k, k] / N)))
           )
         })),
-        3
+        5
       )
     })
   })
@@ -102,7 +103,7 @@ GauNBFuzzyParam.default <- function(train, cl, metd = 1, cores = 2) {
           )
           # ------
         })),
-        3
+        5
       )
     })
   })
@@ -175,7 +176,8 @@ predict.GauNBFuzzyParam <- function(object,
     triangulos_obs <-
       lapply(1:length(medias), function(i) { # loop to groups
         trian <- lapply(1:length(medias[[1]]), function(k) { # loop to dimensions
-          t(sapply(1:length(alpha), function(j) {
+          t(sapply(1:2, function(j) {
+            if(j == 2 ) j = length(alpha)
             # ------------
             a <- dnorm(x = as.numeric(x[k]), mean = as.numeric(Parameters_media[[i]][[k]][j, 1]), sd = sqrt(as.numeric(Parameters_varian[[i]][[k]][j, 1])))
             b <- dnorm(x = as.numeric(x[k]), mean = as.numeric(Parameters_media[[i]][[k]][j, 2]), sd = sqrt(as.numeric(Parameters_varian[[i]][[k]][j, 2])))
@@ -187,41 +189,34 @@ predict.GauNBFuzzyParam <- function(object,
         if (length(trian) > 1) {
           return(Reduce("+", trian))
         } else {
-          return(trian)
+          return(Reduce("+", trian))
         }
       })
     # ------------
     # Center of Mass Calculation
-    vec_trian <- lapply(1:length(unique(M)), function(i) c(triangulos_obs[[i]][1, 1], triangulos_obs[[i]][11, 1], triangulos_obs[[i]][1, 2]))
+    vec_trian <- lapply(1:length(unique(M)), function(i) c(triangulos_obs[[i]][1, 1], triangulos_obs[[i]][2, 1], triangulos_obs[[i]][1, 2]))
     # --------------------------------------------------------
     # Transforming Vector to Scalar
     # ------------
     R_M <- switch(metd,
       # ------------
       # Barycenter
+      # yager Distance
       "1" = {
         # ------------
-        sapply(1:length(unique(M)), function(i) vec_trian[[i]][2] * (((vec_trian[[i]][2] - vec_trian[[i]][1]) * (vec_trian[[i]][3] - vec_trian[[i]][2]) + 1) / 3))
+        Yagerdistance(vec_trian, M)
         # ------------
       },
       "2" = {
         # ------------
         # Using distance Q
-        sapply(1:length(unique(M)), function(i) {
-          # ------------
-          # Start 3 values
-          y <- vec_trian[[i]]
-          # ------------
-          # getting the product zz*
-          S <- y %*% t(Conj(y)) # matrix k x k
-          # ------------
-          # getting the eigenvalues
-          l <- eigen(S)$values
-          # Calculating Q
-          Q <- 3 * (l[1] - l[2])^2
-          # ------------
-          return(Q)
-        })
+        Qdistance(vec_trian, M)
+        # ------------
+      },
+      "3" = {
+        # ------------
+        # Thorani Distance
+        Thoranidistance(vec_trian, M)
         # ------------
       }
     )
@@ -237,6 +232,7 @@ predict.GauNBFuzzyParam <- function(object,
   # ---------
   if (type == "class") {
     # -------------------------
+    R_M_obs <- matrix(R_M_obs,nrow = N_test)
     R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
     resultado <- unique(M)[R_M_obs]
     return(as.factor(c(resultado)))
@@ -245,7 +241,7 @@ predict.GauNBFuzzyParam <- function(object,
     # -------------------------
     Infpos <- which(R_M_obs==Inf)
     R_M_obs[Infpos] <- .Machine$integer.max;
-    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)))
+    R_M_obs <- matrix(unlist(R_M_obs),ncol = length(unique(M)), nrow = N_test)
     R_M_obs <- R_M_obs/rowSums(R_M_obs,na.rm = T)
     # ----------
     colnames(R_M_obs) <- unique(M)
