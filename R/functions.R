@@ -17,7 +17,7 @@ Sturges <- function(dados, M) {
 }
 
 
-#---- Comprimento do Intervalo ----#
+#---- Range Length ----#
 
 #' @noRd
 Comprim_Intervalo <- function(dados, M, Sturges) {
@@ -70,20 +70,20 @@ Freq <- function(dados, M, Comprim_Intervalo, Sturges, minimos, cols) {
     SubSet <- as.data.frame(SubSet)
     NN = nrow(SubSet)
     # --
-    for (coluna in 1:cols) { # coluna da classe
-      for (linhaClasse in 1:NN) { # linha da classe
-        faixa <- minimos[[classe]][coluna] + Comprim_Intervalo[[classe]][coluna] # faixa de frequencia inicial
-        for (linhaFreq in 1:Sturges[[classe]]) { # linha da Freq
+    for (coluna in 1:cols) { # class column
+      for (linhaClasse in 1:NN) { # class row
+        faixa <- minimos[[classe]][coluna] + Comprim_Intervalo[[classe]][coluna] # initial frequency band
+        for (linhaFreq in 1:Sturges[[classe]]) { # frequency line
           # --
-          if (SubSet[linhaClasse, coluna] < faixa) { # ve se valor da classe pertence aaquela faixa
-            Freq[[classe]][linhaFreq, coluna] <- Freq[[classe]][linhaFreq, coluna] + 1 # acumula valor na faixa de frequencia e interrompe este ultimo for
+          if (SubSet[linhaClasse, coluna] < faixa) { # checks if the class value belongs to that range
+            Freq[[classe]][linhaFreq, coluna] <- Freq[[classe]][linhaFreq, coluna] + 1 # accumulates value in the frequency range and interrupts this last 'for'
             break
           }
           if (linhaFreq == Sturges[[classe]] && SubSet[linhaClasse, coluna] >= faixa) {
             Freq[[classe]][linhaFreq, coluna] <- Freq[[classe]][linhaFreq, coluna] + 1
             break
           }
-          faixa <- faixa + Comprim_Intervalo[[classe]][coluna] # troca de faixa -> proxima
+          faixa <- faixa + Comprim_Intervalo[[classe]][coluna] # track change -> next
         }
       }
     }
@@ -106,16 +106,16 @@ Intervalos_Valores <- function(dados, M, Comprim_Intervalo, Sturges, minimos, co
     # --
     SubSet <- dados[M == unique(M)[classe], ]
     # --
-    for (coluna in 1:cols) { # coluna da classe
-      for (linhaClasse in 1:nrow(SubSet)) { # linha da classe
+    for (coluna in 1:cols) { # class column
+      for (linhaClasse in 1:nrow(SubSet)) { # class row
         faixaant <- minimos[[classe]][coluna]
-        faixa <- minimos[[classe]][coluna] + Comprim_Intervalo[[classe]][coluna] # faixa de frequencia inicial
-        for (linhaFreq in 1:Sturges[[classe]]) { # linha da Freq
+        faixa <- minimos[[classe]][coluna] + Comprim_Intervalo[[classe]][coluna] # initial frequency band
+        for (linhaFreq in 1:Sturges[[classe]]) { # frequency line
          # --
            Freq[[classe]][linhaFreq, coluna] <- paste0(round(faixaant,3),",",round(faixa,3));
            # --
           faixaant <- faixa
-          faixa <- faixa + Comprim_Intervalo[[classe]][coluna] # troca de faixa -> proxima
+          faixa <- faixa + Comprim_Intervalo[[classe]][coluna] # track change -> next
         }
       }
     }
@@ -157,25 +157,22 @@ pertinencia_predict <- function(M, Sturges, minimos, Comprim_Intervalo, Pertinen
   for (classe in 1:length(unique(M))) {
     # --
     # --
-    for (coluna in 1:cols) { # coluna da classe
-      for (linhaF in 1:Sturges[[classe]]) { # linha da classe
-        faixa <- minimos[[classe]][coluna] + Comprim_Intervalo[[classe]][coluna] # faixa de frequencia inicial
-        #print(paste("Coluna:", coluna, "classe:", classe, "linhaF", linhaF))
-        #print(c(coluna,x[[coluna]],faixa))
-        if (x[[coluna]] < faixa) { # ve se valor da classe pertence aaquela faixa
-          ACHOU[coluna] <- Pertinencia[[classe]][linhaF, coluna] # acumula valor na faixa de frequencia e interrompe este ultimo for
-          #if(ACHOU[coluna] != 0)
+    for (coluna in 1:cols) { # class column
+      for (linhaF in 1:Sturges[[classe]]) { # class row
+        faixa <- minimos[[classe]][coluna] + Comprim_Intervalo[[classe]][coluna] # initial frequency band
+        if (x[[coluna]] < faixa) { # checks if the class value belongs to that range
+          ACHOU[coluna] <- Pertinencia[[classe]][linhaF, coluna] # accumulates value in the frequency range and interrupts this last 'for'
           break
         }
         if (linhaF == Sturges[[classe]]) {
           ACHOU[coluna] <- Pertinencia[[classe]][linhaF, coluna]
           break
         }
-        faixa <- faixa + Comprim_Intervalo[[classe]][coluna] # troca de faixa -> proxima
+        faixa <- faixa + Comprim_Intervalo[[classe]][coluna] # track change -> next
       }
     }
     # ---
-    ACHOU_t <- rbind(ACHOU_t, ACHOU) # Classes são as linhas
+    ACHOU_t <- rbind(ACHOU_t, ACHOU) # Classes are the lines
     # ---
   }
   #-----
@@ -279,10 +276,26 @@ Thoranidistance <- function(vec_trian, M){
   # ------------
   # Using distance Q
   value <- sapply(1:length(unique(M)), function(i) {
-    0.333*
+    (1/length(unique(M)))*
       vec_trian[[i]][2] * ((vec_trian[[i]][2] - vec_trian[[i]][1])*(vec_trian[[i]][3] - vec_trian[[i]][2]) + 1)
 
 
+  })
+
+  return(value)
+}
+
+
+#' @noRd
+#' Alpha-Order for a class of fuzzy sets
+#' Article: Alpha-Order for a class of fuzzy sets
+#' "changes were made"
+AlphaOrderFuzzy <- function(vec_trian, w,  M){
+
+  vec_mean <- lapply(1:length(vec_trian), function(i) rowMeans(vec_trian[[i]]))
+  # ------------
+  value <- sapply(1:length(unique(M)), function(i) {
+    sum(w*vec_mean[[i]],na.rm = T)
   })
 
   return(value)

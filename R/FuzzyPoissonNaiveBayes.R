@@ -94,7 +94,7 @@ FuzzyPoissonNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
   Freq <- Freq(dados, M, Comprim_Intervalo, Sturges, minimos, cols);
   Pertinencia <- Pertinencia(Freq, dados, M);
   # ------
-  # Probabilidade a priori das classes - consideradas iguais
+  # A priori probability of classes - considered equal
   pk <- rep(1 / length(unique(M)), length(unique(M)))
   # -------------------------------------------------------
 
@@ -172,7 +172,6 @@ predict.FuzzyPoissonNaiveBayes <- function(object,
   # ---------
   if (type == "class") {
     # -------------------------
-    #R_M_obs <- matrix(R_M_obs,nrow = N_test)
     R_M_obs <- sapply(1:nrow(R_M_obs), function(i) which.max(R_M_obs[i, ]))
     resultado <- unique(M)[R_M_obs]
     return(as.factor(c(resultado)))

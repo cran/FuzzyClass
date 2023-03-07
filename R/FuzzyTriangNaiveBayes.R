@@ -57,17 +57,6 @@ FuzzyTriangularNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
   dados <- train # training data matrix
   M <- c(unlist(cl)) # true classes
   M <- factor(M, labels = sort(unique(M)))
-  # intervalos = 10 # Division to memberships
-  # --------------------------------------------------------
-  # # --------------------------------------------------------
-  # # Estimating class memberships
-  # pertinicesC <- lapply(1:length(unique(M)), function(i){
-  #   lapply(1:cols, function(j){
-  #     SubSet <- dados[M==unique(M)[i],j]
-  #     getMembershipsTrapezoidal(SubSet, intervalos)
-  #   })
-  # })
-  # # --------------------------------------------------------
 
   # --------------------------------------------------------
   # Estimating Triangular Parameters
@@ -79,7 +68,7 @@ FuzzyTriangularNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
   Freq <- Freq(dados, M, Comprim_Intervalo, Sturges, minimos, cols);
   Pertinencia <- Pertinencia(Freq, dados, M);
   # ------
-  # Probabilidade a priori das classes - consideradas iguais
+  # A priori probability of classes - considered equal
   pk <- rep(1 / length(unique(M)), length(unique(M)))
   # -------------------------------------------------------
 
@@ -125,7 +114,6 @@ predict.FuzzyTriangularNaiveBayes <- function(object,
                                               type = "class",
                                               ...) {
   # --------------------------------------------------------
-  # type <- match.arg("class")
   test <- as.data.frame(newdata)
   # --------------------------------------------------------
   parametersC <- object$parametersC

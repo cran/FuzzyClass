@@ -7,7 +7,7 @@
 FuzzyNaiveBayes(train, cl, fuzzy = TRUE, m = NULL, Pi = NULL)
 }
 \arguments{
-\item{train}{matrix or data frame of training set cases.}
+\item{train}{matrix or data frame of training set cases}
 
 \item{cl}{factor of true classifications of training set}
 

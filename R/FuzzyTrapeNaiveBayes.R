@@ -115,7 +115,6 @@ predict.FuzzyTrapezoidalNaiveBayes <- function(object,
                                                type = "class",
                                                ...) {
   # --------------------------------------------------------
-  # type <- match.arg("class")
   test <- as.data.frame(newdata)
   # --------------------------------------------------------
   pertinicesC <- object$pertinicesC
@@ -224,7 +223,6 @@ predict.FuzzyTrapezoidalNaiveBayes <- function(object,
     produto <- matrix(as.numeric(res), ncol = length(unique(M)))
     produto <- apply(produto, 2, prod)
     # --------------------------------------------------------
-    # R_M_class <- which.max(produto)
     R_M_class <- produto
     # --------------------------------------------------------
     return(R_M_class)

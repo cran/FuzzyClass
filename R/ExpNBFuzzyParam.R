@@ -3,9 +3,12 @@
 #' \code{ExpNBFuzzyParam} Fuzzy Exponential Naive Bayes Classifier with Fuzzy parameters
 #'
 #'
-#' @param train matrix or data frame of training set cases.
+#' @param train matrix or data frame of training set cases
 #' @param cl factor of true classifications of training set
+#' @param alphacut value of the alpha-cut parameter, this value is between 0 and 1.
 #' @param metd Method of transforming the triangle into scalar, It is the type of data entry for the test sample, use metd 1 if you want to use the Yager technique, metd 2 if you want to use the Q technique of the uniformity test (article: Directional Statistics and Shape analysis), and metd 3 if you want to use the Thorani technique
+#' @param alp When metd for 4, it is necessary to have alp which are alpha-cut defined
+#' @param w When metd for 4, it is necessary to have w which are alpha-cut weights defined
 #' @param cores  how many cores of the computer do you want to use (default = 2)
 #'
 #' @return A vector of classifications
@@ -43,12 +46,12 @@
 #' @importFrom Rdpack reprompt
 #'
 #' @export
-ExpNBFuzzyParam <- function(train, cl, metd = 1, cores = 2) {
+ExpNBFuzzyParam <- function(train, cl,  alphacut = 0.0001, metd = 2, alp = c(0.35, 0.7, 0.86), w = c(0.1,0.3,0.6), cores = 2) {
   UseMethod("ExpNBFuzzyParam")
 }
 
 #' @export
-ExpNBFuzzyParam.default <- function(train, cl, metd = 1, cores = 2) {
+ExpNBFuzzyParam.default <- function(train, cl,  alphacut = 0.0001, metd = 2, alp = c(0.35, 0.7, 0.86), w = c(0.1,0.3,0.6), cores = 2) {
 
   # --------------------------------------------------------
   # Estimating class parameters
@@ -66,7 +69,11 @@ ExpNBFuzzyParam.default <- function(train, cl, metd = 1, cores = 2) {
   # --------------------------------------------------------
   # --------------------------------------------------------
   # Estimating Triangular Parameters
-  alpha <- seq(0.0001, 1.1, 0.1)
+  alpha = alp
+  if (metd != 4) {
+    alpha <- seq(alphacut, 1.1, 0.1)
+    alpha <- ifelse(alpha > 1, 1, alpha)
+  }
   # -------------------------------
   N <- nrow(dados) # Number of observations
   # -------------------------------
@@ -93,7 +100,8 @@ ExpNBFuzzyParam.default <- function(train, cl, metd = 1, cores = 2) {
     M = M,
     alpha = alpha,
     metd = metd,
-    cores = cores
+    cores = cores,
+    w = w
   ),
   class = "ExpNBFuzzyParam"
   )
@@ -119,7 +127,6 @@ predict.ExpNBFuzzyParam <- function(object,
                                     type = "class",
                                     ...) {
   # --------------------------------------------------------
-  # type <- match.arg("class")
   test <- as.data.frame(newdata)
   # --------------------------------------------------------
   Parameters_lambda <- object$Parameters_lambda
@@ -129,6 +136,7 @@ predict.ExpNBFuzzyParam <- function(object,
   alpha <- object$alpha
   metd <- object$metd
   cores <- object$cores
+  w <- object$w
   # --------------------------------------------------------
 
   # --------------------------------------------------------
@@ -149,14 +157,19 @@ predict.ExpNBFuzzyParam <- function(object,
     triangulos_obs <-
       lapply(1:length(lambdas), function(i) { # loop to groups
         trian <- lapply(1:length(lambdas[[1]]), function(k) { # loop to dimensions
-          t(sapply(1:length(alpha), function(j) {
+          nn <- length(alpha)
+          if(metd != 4){ nn <- 2 }
+          t(sapply(1:nn, function(j) {
+            if((j == 2) && (metd != 4) ){ j = length(alpha) }
+            # ------------
             a <- dexp(x = as.numeric(x[k]), rate = 1 / as.numeric(Parameters_lambda[[i]][[k]][j, 1]), log = T)
             b <- dexp(x = as.numeric(x[k]), rate = 1 / as.numeric(Parameters_lambda[[i]][[k]][j, 2]), log = T)
-
+            # ------------
             a <- ifelse(a == -Inf, 1e-06, a)
             b <- ifelse(b == -Inf, 1e-06, b)
-
+            # ------------
             c(min(a, b), max(a, b))
+            # ------------
           }))
         })
         if (length(trian) > 1) {
@@ -167,7 +180,8 @@ predict.ExpNBFuzzyParam <- function(object,
       })
     # ------------
     # Center of Mass Calculation
-    vec_trian <- lapply(1:length(unique(M)), function(i) c(triangulos_obs[[i]][1, 1], triangulos_obs[[i]][11, 1], triangulos_obs[[i]][1, 2]))
+    vec_trian <- triangulos_obs
+    if(metd != 4) vec_trian <- lapply(1:length(unique(M)), function(i) c(triangulos_obs[[i]][1, 1], triangulos_obs[[i]][2, 1], triangulos_obs[[i]][1, 2]))
     # --------------------------------------------------------
     # Transforming Vector to Scalar
     # ------------
@@ -191,10 +205,14 @@ predict.ExpNBFuzzyParam <- function(object,
                     # Thorani Distance
                     Thoranidistance(vec_trian, M)
                     # ------------
+                  },
+                  "4" = {
+                    # ------------
+                    # Alpha-Order for a class of fuzzy sets
+                    AlphaOrderFuzzy(vec_trian, w, M)
                   }
     )
     # --------------------------------------------------------
-    # R_M_class <- which.max(produto)
     R_M_class <- R_M
     # --------------------------------------------------------
     return(R_M_class)

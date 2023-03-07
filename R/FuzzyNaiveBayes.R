@@ -3,7 +3,7 @@
 #' \code{FuzzyNaiveBayes} Fuzzy Naive Bayes
 #'
 #'
-#' @param train matrix or data frame of training set cases.
+#' @param train matrix or data frame of training set cases
 #' @param cl factor of true classifications of training set
 #' @param fuzzy boolean variable to use the membership function
 #' @param m is M/N, where M is the number of classes and N is the number of train lines
@@ -58,6 +58,16 @@ FuzzyNaiveBayes.default <- function(train, cl, fuzzy = T, m = NULL, Pi = NULL) {
   M <- c(unlist(cl)) # true classes
   if(!is.factor(M))  M <- factor(M, labels = sort(unique(M)))
   # --
+
+  # --
+  # converting character to factor
+  typescolumns <- sapply(1:cols, function(i) is.character(train[,i]))
+  columnscharac <- which(typescolumns)
+  trainTrans <- train[,columnscharac]
+  trainTrans <- data.frame(purrr::map_dfr(trainTrans,factor))
+  train[,columnscharac] <- trainTrans
+  # --
+
 
   # --
   res <- sapply(1:cols, function(i) {is.factor(train[,i])})
@@ -181,18 +191,16 @@ FuzzyNaiveBayes.categorical <- function(train, cl, fuzzy = T, m = NULL, Pi = NUL
   # Estimating Parameters
   if(is.null(m) & is.null(Pi)){ m <- length(unique(cl))/nrow(dados); Pi <-  1/m}
   # ---
-  # Lista: variavel x classes
+  # List: variable x target
   parametersC <- lapply(1:length(unique(M)), function(i) {
     lapply(1:cols, function(j) {
       SubSet <- dados[M == unique(M)[i], j]
-      #SubSet <- na.omit(SubSet)
       param <- (table(SubSet) + m*pi)/(sum(table(SubSet)) + m)
       return(param)
     })
   })
 
   model <- e1071::naiveBayes(x = dados, y = cl)
-  #parametersC <- model$tables
   # --------------------------------------------------------
 
   #--------------------------------------------------------
@@ -204,7 +212,7 @@ FuzzyNaiveBayes.categorical <- function(train, cl, fuzzy = T, m = NULL, Pi = NUL
     })
   })
   #------
-  # Probabilidade a priori das classes - consideradas iguais
+  # A priori probability of classes - considered equal
   pk <- rep(1 / length(unique(M)), length(unique(M)))
   # -------------------------------------------------------
 
@@ -234,7 +242,7 @@ FuzzyNaiveBayes.continuo <- function(train, cl, fuzzy = T, m = NULL, Pi = NULL) 
   if(is.null(cols)){
     cols <- 1
   }
-  dados <- train # training data matrix
+  dados <- train
   M <- c(unlist(cl)) # true classes
   if(!is.factor(M))  M <- factor(M, levels = unique(M))
   # --
@@ -265,7 +273,7 @@ FuzzyNaiveBayes.continuo <- function(train, cl, fuzzy = T, m = NULL, Pi = NULL) 
   #------
   Pertinencia <- Pertinencia(Freq, dados, M);
   #------
-  # Probabilidade a priori das classes - consideradas iguais
+  # A priori probability of classes - considered equal
   pk <- rep(1 / length(unique(M)), length(unique(M)))
   # -------------------------------------------------------
 

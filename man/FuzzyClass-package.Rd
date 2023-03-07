@@ -13,8 +13,8 @@ It provides classifiers which can be used for discrete variables and for continu
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/Jodavid/FuzzyClass}
-  \item Report bugs at \url{https://github.com/Jodavid/FuzzyClass/issues}
+  \item \url{https://github.com/leapigufpb/FuzzyClass}
+  \item Report bugs at \url{https://github.com/leapigufpb/FuzzyClass/issues}
 }
 
 }
