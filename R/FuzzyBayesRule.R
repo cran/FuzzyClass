@@ -1,6 +1,6 @@
-#' Fuzzy Exponential Naive Bayes
+#' Fuzzy Bayes Rule
 #'
-#' \code{FuzzyExponentialNaiveBayes} Fuzzy Exponential Naive Bayes
+#' \code{FuzzyBayesRule} Fuzzy Bayes Rule
 #'
 #'
 #' @param train matrix or data frame of training set cases.
@@ -11,7 +11,7 @@
 #' @return A vector of classifications
 #'
 #' @references
-#' \insertRef{moraes2016fuzzy}{FuzzyClass}
+#' \insertRef{de2006fuzzy}{FuzzyClass}
 #'
 #' @examples
 #'
@@ -26,7 +26,7 @@
 #' # matrix or data frame of test set cases.
 #' # A vector will be interpreted as a row vector for a single case.
 #' test <- Test[, -5]
-#' fit_NBT <- FuzzyExponentialNaiveBayes(
+#' fit_NBT <- FuzzyBayesRule(
 #'   train = Train[, -5],
 #'   cl = Train[, 5], cores = 2
 #' )
@@ -35,15 +35,15 @@
 #'
 #' head(pred_NBT)
 #' head(Test[, 5])
-#' @importFrom stats dexp
+#' @importFrom stats dgamma
 #'
 #' @export
-FuzzyExponentialNaiveBayes <- function(train, cl, cores = 2, fuzzy = TRUE) {
-  UseMethod("FuzzyExponentialNaiveBayes")
+FuzzyBayesRule <- function(train, cl, cores = 2, fuzzy = TRUE) {
+  UseMethod("FuzzyBayesRule")
 }
 
 #' @export
-FuzzyExponentialNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
+FuzzyBayesRule.default <- function(train, cl, cores = 2, fuzzy = T) {
 
   # --------------------------------------------------------
   # Estimating class parameters
@@ -53,12 +53,12 @@ FuzzyExponentialNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) 
   cols <- p_data$cols
   dados <- p_data$dados
   M <- p_data$M
-  intervalos <- p_data$intervalos
   # --------------------------------------------------------
 
   # --------------------------------------------------------
-  # Estimating Exponential Parameters
-  parametersC <- estimation_parameters_exp(M, cols, dados)
+  # Estimating Parameters
+  parametersC <- estimation_parameters_fuzzy_bayes_rule(M, cols, dados)
+
   # --------------------------------------------------------
   Sturges <- Sturges(dados, M);
   Comprim_Intervalo <- Comprim_Intervalo(dados, M, Sturges);
@@ -84,21 +84,21 @@ FuzzyExponentialNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) 
     pk = pk,
     fuzzy = fuzzy
   ),
-  class = "FuzzyExponentialNaiveBayes"
+  class = "FuzzyBayesRule"
   )
 }
 # -------------------------
 
 
 #' @export
-print.FuzzyExponentialNaiveBayes <- function(x, ...) {
+print.FuzzyBayesRule <- function(x, ...) {
   if (x$fuzzy == T) {
     # -----------------
-    cat("\nFuzzy Exponential Naive Bayes Classifier for Discrete Predictors\n\n")
+    cat("\nFuzzy Bayes Rule Classifier for Discrete Predictors\n\n")
     # -----------------
   } else {
     # -----------------
-    cat("\nNaive Exponential  Bayes Classifier for Discrete Predictors\n\n")
+    cat("\nNaive Bayes Rule Classifier for Discrete Predictors\n\n")
     # -----------------
   }
   cat("Class:\n")
@@ -107,10 +107,10 @@ print.FuzzyExponentialNaiveBayes <- function(x, ...) {
 }
 
 #' @export
-predict.FuzzyExponentialNaiveBayes <- function(object,
-                                               newdata,
-                                               type = "class",
-                                               ...) {
+predict.FuzzyBayesRule <- function(object,
+                                   newdata,
+                                   type = "class",
+                                   ...) {
   # --------------------------------------------------------
   test <- as.data.frame(newdata)
   # --------------------------------------------------------
@@ -129,7 +129,8 @@ predict.FuzzyExponentialNaiveBayes <- function(object,
   # --------------------------------------------------------
   # Classification
   # --------------
-  P <- density_values_exp(M, cols, test, parametersC, pk)
+  P <- density_values_multivariate_normal(M, cols, test, parametersC, pk)
+
   # ---------
   N_test <- nrow(test)
   # --
@@ -163,17 +164,11 @@ predict.FuzzyExponentialNaiveBayes <- function(object,
 
 # -------------------------------------------------------
 # Functions
+
 # ----------------
-density_values_exp <- function(M, cols, test, parametersC, pk){
+density_values_multivariate_normal <- function(M, cols, test, parametersC, pk){
   lapply(1:length(unique(M)), function(i) {
-    densidades <- sapply(1:cols, function(j) {
-      stats::dexp(test[, j], rate = parametersC[[i]][[j]][1])
-    })
-    if(nrow(test) > 1){
-      densidades <- apply(densidades, 1, prod)
-    }else{
-      densidades <- prod(densidades)
-    }
+    densidades <- mvtnorm::dmvnorm(test,mean = parametersC[[i]][[1]], sigma = parametersC[[i]][[2]])
     # Calcula a P(w_i) * P(X_k | w_i)
     p <- pk[[i]] * densidades
     # ---
@@ -184,13 +179,16 @@ density_values_exp <- function(M, cols, test, parametersC, pk){
 # ----------------
 
 # ----------------
-estimation_parameters_exp <- function(M, cols, dados){
+estimation_parameters_fuzzy_bayes_rule <- function(M, cols, dados){
   lapply(1:length(unique(M)), function(i) {
-    lapply(1:cols, function(j) {
-      SubSet <- dados[M == unique(M)[i], j]
-      param <- 1 / mean(SubSet, na.rm = TRUE)
+      SubSet <- dados[M == unique(M)[i],]
+      # --
+      Mean <- colMeans(SubSet)
+      VarMatrix <- var(SubSet)
+      # --
+      param <- list(Mean,VarMatrix)
+      # --
       return(param)
-    })
   })
 
 }

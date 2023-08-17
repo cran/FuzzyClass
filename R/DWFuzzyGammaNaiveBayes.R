@@ -1,49 +1,53 @@
-#' Fuzzy Exponential Naive Bayes
+#' Double Weighted Fuzzy Gamma Naive Bayes
 #'
-#' \code{FuzzyExponentialNaiveBayes} Fuzzy Exponential Naive Bayes
+#' \code{DWFuzzyGammaNaiveBayes} Double Weighted Fuzzy Gamma Naive Bayes
 #'
 #'
 #' @param train matrix or data frame of training set cases.
 #' @param cl factor of true classifications of training set
-#' @param cores  how many cores of the computer do you want to use to use for prediction (default = 2)
+#' @param cores how many cores of the computer do you want to use to use for prediction (default = 2)
 #' @param fuzzy boolean variable to use the membership function
+#' @param wdelta vector weight each class
+#' @param weta vector  weight each feature
 #'
 #' @return A vector of classifications
 #'
 #' @references
-#' \insertRef{moraes2016fuzzy}{FuzzyClass}
+#' \insertRef{marcos2020double}{FuzzyClass}
 #'
 #' @examples
 #'
 #' set.seed(1) # determining a seed
-#' data(iris)
+#' data(GamWeightData)
 #'
 #' # Splitting into Training and Testing
-#' split <- caTools::sample.split(t(iris[, 1]), SplitRatio = 0.7)
-#' Train <- subset(iris, split == "TRUE")
-#' Test <- subset(iris, split == "FALSE")
+#' split <- caTools::sample.split(t(GamWeightData[, 1]), SplitRatio = 0.7)
+#' Train <- subset(GamWeightData, split == "TRUE")
+#' Test <- subset(GamWeightData, split == "FALSE")
 #' # ----------------
 #' # matrix or data frame of test set cases.
 #' # A vector will be interpreted as a row vector for a single case.
-#' test <- Test[, -5]
-#' fit_NBT <- FuzzyExponentialNaiveBayes(
-#'   train = Train[, -5],
-#'   cl = Train[, 5], cores = 2
+#' test <- Test[, -4]
+#' fit_NBT <- DWFuzzyGammaNaiveBayes(
+#'   train = Train[, -4],
+#'   cl = Train[, 4], cores = 2,
+#'   wdelta = c(2.002/6,1.998/6,2.000/6),
+#'   weta = c(3/10,2/10, 5/10)
 #' )
 #'
 #' pred_NBT <- predict(fit_NBT, test)
 #'
 #' head(pred_NBT)
-#' head(Test[, 5])
-#' @importFrom stats dexp
+#' head(Test[, 4])
+#' @importFrom stats dgamma
 #'
 #' @export
-FuzzyExponentialNaiveBayes <- function(train, cl, cores = 2, fuzzy = TRUE) {
-  UseMethod("FuzzyExponentialNaiveBayes")
+DWFuzzyGammaNaiveBayes <- function(train, cl, cores = 2, fuzzy = TRUE, wdelta, weta) {
+  UseMethod("DWFuzzyGammaNaiveBayes")
 }
 
 #' @export
-FuzzyExponentialNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
+DWFuzzyGammaNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T, wdelta, weta) {
 
   # --------------------------------------------------------
   # Estimating class parameters
@@ -57,8 +61,9 @@ FuzzyExponentialNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) 
   # --------------------------------------------------------
 
   # --------------------------------------------------------
-  # Estimating Exponential Parameters
-  parametersC <- estimation_parameters_exp(M, cols, dados)
+  # Estimating Gamma Parameters
+  parametersC <- estimation_parameters_gamma(M, cols, dados)
+
   # --------------------------------------------------------
   Sturges <- Sturges(dados, M);
   Comprim_Intervalo <- Comprim_Intervalo(dados, M, Sturges);
@@ -82,23 +87,25 @@ FuzzyExponentialNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) 
     Pertinencia = Pertinencia,
     Sturges = Sturges,
     pk = pk,
-    fuzzy = fuzzy
+    fuzzy = fuzzy,
+    wdelta = wdelta,
+    weta = weta
   ),
-  class = "FuzzyExponentialNaiveBayes"
+  class = "DWFuzzyGammaNaiveBayes"
   )
 }
 # -------------------------
 
 
 #' @export
-print.FuzzyExponentialNaiveBayes <- function(x, ...) {
+print.DWFuzzyGammaNaiveBayes <- function(x, ...) {
   if (x$fuzzy == T) {
     # -----------------
-    cat("\nFuzzy Exponential Naive Bayes Classifier for Discrete Predictors\n\n")
+    cat("\nDouble Weighted Fuzzy Gamma Naive Bayes Classifier for Discrete Predictors\n\n")
     # -----------------
   } else {
     # -----------------
-    cat("\nNaive Exponential  Bayes Classifier for Discrete Predictors\n\n")
+    cat("\nDouble Weighted Naive Gamma  Bayes Classifier for Discrete Predictors\n\n")
     # -----------------
   }
   cat("Class:\n")
@@ -107,10 +114,10 @@ print.FuzzyExponentialNaiveBayes <- function(x, ...) {
 }
 
 #' @export
-predict.FuzzyExponentialNaiveBayes <- function(object,
-                                               newdata,
-                                               type = "class",
-                                               ...) {
+predict.DWFuzzyGammaNaiveBayes <- function(object,
+                                         newdata,
+                                         type = "class",
+                                         ...) {
   # --------------------------------------------------------
   test <- as.data.frame(newdata)
   # --------------------------------------------------------
@@ -124,19 +131,22 @@ predict.FuzzyExponentialNaiveBayes <- function(object,
   Sturges <- object$Sturges
   pk <- object$pk
   fuzzy <- object$fuzzy
+  wdelta <- object$wdelta
+  weta <- object$weta
   # --------------------------------------------------------
 
   # --------------------------------------------------------
   # Classification
   # --------------
-  P <- density_values_exp(M, cols, test, parametersC, pk)
+  P <- density_values_gamma_dw(M, cols, test, parametersC, pk, wdelta, weta)
+
   # ---------
   N_test <- nrow(test)
   # --
   test <- split(test, seq(nrow(test)))
   # --
   if(fuzzy == T){
-    retorno <- purrr::map(test, function_membership_predict, M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols)
+    retorno <- purrr::map(test, function_membership_predict_dw, M, Sturges, minimos, Comprim_Intervalo, Pertinencia, cols, weta)
     R_M_obs <- function_fuzzy_predict(retorno, P, M)
   }else{
     R_M_obs <- t(data.frame(matrix(unlist(P), nrow=length(P), byrow=TRUE)))
@@ -163,19 +173,16 @@ predict.FuzzyExponentialNaiveBayes <- function(object,
 
 # -------------------------------------------------------
 # Functions
+
 # ----------------
-density_values_exp <- function(M, cols, test, parametersC, pk){
+density_values_gamma_dw <- function(M, cols, test, parametersC, pk, wdelta, weta){
   lapply(1:length(unique(M)), function(i) {
     densidades <- sapply(1:cols, function(j) {
-      stats::dexp(test[, j], rate = parametersC[[i]][[j]][1])
+      stats::dgamma(test[, j], shape = parametersC[[i]][[j]][1], scale = parametersC[[i]][[j]][2])^(weta[j])
     })
-    if(nrow(test) > 1){
-      densidades <- apply(densidades, 1, prod)
-    }else{
-      densidades <- prod(densidades)
-    }
+    densidades <- apply(densidades, 1, prod)
     # Calcula a P(w_i) * P(X_k | w_i)
-    p <- pk[[i]] * densidades
+    p <- (pk[[i]]^(wdelta[i])) * densidades
     # ---
     return(p)
   })
@@ -184,11 +191,13 @@ density_values_exp <- function(M, cols, test, parametersC, pk){
 # ----------------
 
 # ----------------
-estimation_parameters_exp <- function(M, cols, dados){
+estimation_parameters_gamma <- function(M, cols, dados){
   lapply(1:length(unique(M)), function(i) {
     lapply(1:cols, function(j) {
       SubSet <- dados[M == unique(M)[i], j]
-      param <- 1 / mean(SubSet, na.rm = TRUE)
+      # --
+      param <- stats::optim(c(.5,.5), log_ver_Gamma, method = "L-BFGS-B", y = SubSet, lower = 0.1, upper = max(SubSet))$par
+      # --
       return(param)
     })
   })
