@@ -31,7 +31,7 @@ plot(iris$Petal.Length, iris$Petal.Width, col = iris$Species, pch = 19,
 legend("topright", legend = levels(iris$Species), col = 1:3, pch = 19)
 
 
-## ---- message=FALSE, warning=FALSE--------------------------------------------
+## ----message=FALSE, warning=FALSE---------------------------------------------
 library(FuzzyClass)
 
 # Load the iris dataset

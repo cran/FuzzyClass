@@ -7,9 +7,10 @@
 version](https://www.r-pkg.org/badges/version/FuzzyClass)](https://cran.r-project.org/package=FuzzyClass)
 [![CRAN
 Download](https://cranlogs.r-pkg.org/badges/grand-total/FuzzyClass)](https://cran.r-project.org/package=FuzzyClass)
+<!--[![R-CMD-check](https://github.com/leapigufpb/FuzzyClass/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/leapigufpb/FuzzyClass/actions/workflows/R-CMD-check.yaml)-->
 <!-- badges: end -->
 
-Last update: 16-08-2023
+Last update: 14-02-2024
 
 ## A family of probabilities-based classifiers fuzzy and non-fuzzy
 
@@ -27,6 +28,10 @@ cases. Algorithms like those in `FuzzyClass` address this task by
 leveraging data probabilities and characteristics, thus becoming
 valuable tools for addressing intricate and ambiguous classification
 problems.
+
+> A package manual that showcases the existing classifiers and
+> demonstrates how to use it can be found at the following link:
+> <https://cran.r-project.org/package=FuzzyClass/FuzzyClass.pdf>
 
 ### Dependencies
 
@@ -122,13 +127,13 @@ Table <- table(factor(Test[,4]), saida)
 Table
 #>    saida
 #>      1  2  3
-#>   1 45  6  0
-#>   2  7 51 14
-#>   3  0 10 47
+#>   1 50  5  2
+#>   2  6 42 15
+#>   3  0 11 49
 
 #Accuracy:
 sum(diag(Table))/sum(Table)
-#> [1] 0.7944444
+#> [1] 0.7833333
 
 saidaMatrix <- predict(fit_FGNB, test, type = "matrix")
 ```
@@ -144,13 +149,13 @@ saida |> head()
 #> Levels: 1 2 3
 
 saidaMatrix |> head()
-#>              1            2            3
-#> [1,] 0.9992589 0.0007410196 8.975386e-08
-#> [2,] 0.8379036 0.0985419165 6.355443e-02
-#> [3,] 0.9952859 0.0047108312 3.226157e-06
-#> [4,] 0.9917273 0.0082661561 6.539650e-06
-#> [5,] 0.6723077 0.3112579462 1.643434e-02
-#> [6,] 0.9828923 0.0170274151 8.028614e-05
+#>              1           2            3
+#> [1,] 0.9989435 0.001056437 9.262171e-08
+#> [2,] 0.9939728 0.006011989 1.523144e-05
+#> [3,] 0.8213097 0.116368282 6.232206e-02
+#> [4,] 0.9946096 0.005386036 4.371040e-06
+#> [5,] 0.8684685 0.069905455 6.162602e-02
+#> [6,] 0.8015720 0.145765858 5.266218e-02
 ```
 
 This code appears to be related to the application of a classification

@@ -5,13 +5,13 @@
 #'
 #' @param train matrix or data frame of training set cases.
 #' @param cl factor of true classifications of training set
-#' @param cores  how many cores of the computer do you want to use to use for prediction (default = 2)
+#' @param cores  how many cores of the computer do you want to use (default = 2)
 #' @param fuzzy boolean variable to use the membership function
 #'
 #' @return A vector of classifications
 #'
 #' @references
-#' \insertRef{moraes2021new}{FuzzyClass}
+#' \insertRef{ferreira2023}{FuzzyClass}
 #'
 #' @examples
 #'
@@ -56,28 +56,14 @@ FuzzyGeoNaiveBayes.default <- function(train, cl, cores = 2, fuzzy = T) {
   # Estimating class parameters
   p_data <- predata(train,cl)
   # --
-  train <-  p_data$train
+  dados <- train <-  p_data$train
   cols <- p_data$cols
-  dados <- p_data$dados
   M <- p_data$M
   intervalos <- p_data$intervalos
-  #--------------------------------------------------------
-
-
-  #------------------------------------------------------------
-  # Verify data types
-  verifyNumbers <- sapply(1:cols, function(i){
-    set.seed(3)
-    n = 3
-    subset <- sample(dados[,i],size = n, replace = F)
-    result <- subset == floor(subset)
-    if(sum(result) == n){
-      result <- 1
-    }else{
-      result <- 0
-    }
-    return(result)
-  })
+  # --------------------------------------------------------
+  # --------------------------------------------------------
+  # Verify if all variables are discrete
+  verifyNumbers <- verifyNumbersFunction(dados, cols)
 
   # --------------------------------------------------------
   if(sum(verifyNumbers) != cols){ stop("All variables must be discrete values.") }
